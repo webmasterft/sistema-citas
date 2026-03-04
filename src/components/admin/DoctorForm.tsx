@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Tables } from "@/types/database";
 import { translateError } from "@/lib/error-translator";
-import { X, Loader2, Stethoscope } from "lucide-react"; // Keep X for the close button
+import { X, Loader2, Stethoscope, Search, Check, ChevronDown } from "lucide-react";
+import { MEDICAL_SPECIALTIES } from "@/lib/constants";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 interface DoctorFormProps {
   onClose: () => void;
@@ -15,6 +22,13 @@ export function DoctorForm({ onClose, onSuccess }: DoctorFormProps) {
   const [loading, setLoading] = useState(false);
   const [institutions, setInstitutions] = useState<{ id: string; name: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [specialtySearch, setSpecialtySearch] = useState("");
+  const [isSpecialtyOpen, setIsSpecialtyOpen] = useState(false);
+  const [selectedSpecialty, setSelectedSpecialty] = useState("");
+
+  const filteredSpecialties = MEDICAL_SPECIALTIES.filter((s: string) => 
+    s.toLowerCase().includes(specialtySearch.toLowerCase())
+  );
 
   useEffect(() => {
     async function fetchInstitutions() {
@@ -31,22 +45,18 @@ export function DoctorForm({ onClose, onSuccess }: DoctorFormProps) {
 
     const formData = new FormData(e.currentTarget);
     const full_name = formData.get("full_name") as string;
-    const specialty = formData.get("specialty") as string;
+    const specialty = selectedSpecialty;
     const license_number = formData.get("license_number") as string;
     const institution_id = formData.get("institution_id") as string;
 
-    // For now, in this mock logic we use the profile table
-    // In a real app, this might involve auth.signUp
-    const { error: submitError } = await supabase
-      .from("profiles")
+    const { error: submitError } = await (supabase
+      .from("doctors_directory" as any)
       .insert([{ 
-        id: crypto.randomUUID(), // Mock ID
         full_name, 
         specialty, 
         license_number, 
         institution_id: institution_id || null,
-        role: 'doctor' 
-      }]);
+      }]) as any);
 
     if (submitError) {
       setError(translateError(submitError));
@@ -79,15 +89,56 @@ export function DoctorForm({ onClose, onSuccess }: DoctorFormProps) {
             />
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="specialty" className="text-sm font-medium">Especialidad</label>
-            <input
-              id="specialty"
-              name="specialty"
-              required
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="Ej: Pediatría, Cardiología..."
-            />
+          <div className="space-y-2 relative">
+            <label className="text-sm font-medium">Especialidad</label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsSpecialtyOpen(!isSpecialtyOpen)}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span className={selectedSpecialty ? "text-foreground" : "text-muted-foreground"}>
+                  {selectedSpecialty || "Seleccione una especialidad"}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </button>
+
+              {isSpecialtyOpen && (
+                <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in fade-in zoom-in-95 duration-100">
+                  <div className="flex items-center border-b px-3 py-2">
+                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                    <input
+                      className="flex h-8 w-full rounded-md bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                      placeholder="Buscar especialidad..."
+                      value={specialtySearch}
+                      onChange={(e) => setSpecialtySearch(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="max-h-60 overflow-y-auto p-1">
+                    {filteredSpecialties.length === 0 ? (
+                      <div className="py-6 text-center text-sm">No se encontraron resultados.</div>
+                    ) : (
+                      filteredSpecialties.map((specialty) => (
+                        <button
+                          key={specialty}
+                          type="button"
+                          onClick={() => {
+                            setSelectedSpecialty(specialty);
+                            setIsSpecialtyOpen(false);
+                            setSpecialtySearch("");
+                          }}
+                          className="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", selectedSpecialty === specialty ? "opacity-100" : "opacity-0")} />
+                          {specialty}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">

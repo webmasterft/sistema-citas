@@ -10,25 +10,63 @@ export function InstitutionManager() {
   const [institutions, setInstitutions] = useState<Tables<"institutions">[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showSlowNetwork, setShowSlowNetwork] = useState(false);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (loading) {
+      timer = setTimeout(() => setShowSlowNetwork(true), 5000);
+    } else {
+      setShowSlowNetwork(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   const fetchInstitutions = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("institutions")
-      .select("*")
-      .order("name");
-    
-    if (!error && data) {
-      setInstitutions(data);
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("institutions")
+        .select("*")
+        .order("name");
+      
+      if (!error && data) {
+        setInstitutions(data);
+      }
+    } catch (err) {
+      console.error("Fetch institutions error:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
     fetchInstitutions();
   }, [fetchInstitutions]);
 
-  if (loading && institutions.length === 0) return <div className="p-8 text-center">Cargando instituciones...</div>;
+  if (loading && institutions.length === 0) {
+    return (
+      <div className="p-12 text-center flex flex-col items-center justify-center gap-4">
+        <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4"></div>
+        <p className="text-muted-foreground">Cargando instituciones...</p>
+        {showSlowNetwork && (
+          <div className="mt-4 p-4 border border-destructive/20 bg-destructive/10 rounded-lg max-w-md text-sm">
+            <p className="font-semibold text-destructive mb-2">Parece que la conexión se atascó.</p>
+            <p className="text-muted-foreground mb-4">Esto ocurre a veces en desarrollo cuando la base de datos bloquea el almacenamiento local.</p>
+            <button 
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+              className="px-4 py-2 bg-destructive text-destructive-foreground font-medium rounded-md hover:bg-destructive/90 transition-colors"
+            >
+              Forzar Limpieza y Recargar
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <section className="space-y-6">
