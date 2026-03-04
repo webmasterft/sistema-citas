@@ -1,10 +1,13 @@
 "use client";
 
 import { Sidebar } from "./Sidebar";
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X, Loader2 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { usePathname } from "next/navigation";
+import { LogOut } from "lucide-react";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -12,6 +15,28 @@ function cn(...inputs: ClassValue[]) {
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { session, signOut, loading, user } = useAuth();
+  const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  // Avoid hydration mismatch by only rendering auth-dependent UI on the client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isLoginPage = pathname === "/login";
+
+  if (!mounted || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -23,13 +48,22 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </div>
           <span className="text-xl font-bold tracking-tight">MedApp</span>
         </div>
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          aria-label={isSidebarOpen ? "Cerrar menú" : "Abrir menú"}
-          className="rounded-md p-2 hover:bg-accent"
-        >
-          {isSidebarOpen ? <X className="size-6" /> : <Menu className="size-6" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => signOut()}
+            className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+            title="Cerrar sesión"
+          >
+            <LogOut className="size-5" />
+          </button>
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            aria-label={isSidebarOpen ? "Cerrar menú" : "Abrir menú"}
+            className="rounded-md p-2 hover:bg-accent"
+          >
+            {isSidebarOpen ? <X className="size-6" /> : <Menu className="size-6" />}
+          </button>
+        </div>
       </header>
 
       {/* Sidebar - Desktop & Mobile overlay */}

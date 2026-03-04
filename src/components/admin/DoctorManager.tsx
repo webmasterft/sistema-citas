@@ -11,39 +11,75 @@ export function DoctorManager() {
   const [institutions, setInstitutions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showSlowNetwork, setShowSlowNetwork] = useState(false);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (loading) {
+      timer = setTimeout(() => setShowSlowNetwork(true), 5000);
+    } else {
+      setShowSlowNetwork(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    
-    // Fetch doctors (profiles with role=doctor)
-    const { data: doctorsData, error: doctorsError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("role", "doctor")
-      .order("full_name");
+    try {
+      setLoading(true);
+      
+      // Fetch doctors from the new directory table
+      const { data: doctorsData, error: doctorsError } = await (supabase
+        .from("doctors_directory" as any)
+        .select("*")
+        .order("full_name") as any);
 
-    // Fetch institutions for mapping labels
-    const { data: instData } = await supabase
-      .from("institutions")
-      .select("id, name");
+      // Fetch institutions for mapping labels
+      const { data: instData } = await supabase
+        .from("institutions")
+        .select("id, name");
 
-    if (!doctorsError && doctorsData) {
-      setDoctors(doctorsData);
+      if (!doctorsError && doctorsData) {
+        setDoctors(doctorsData as any);
+      }
+
+      if (instData) {
+        const mapping = instData.reduce((acc, curr) => ({ ...acc, [curr.id]: curr.name }), {});
+        setInstitutions(mapping);
+      }
+    } catch (err) {
+      console.error("Fetch doctors error:", err);
+    } finally {
+      setLoading(false);
     }
-
-    if (instData) {
-      const mapping = instData.reduce((acc, curr) => ({ ...acc, [curr.id]: curr.name }), {});
-      setInstitutions(mapping);
-    }
-
-    setLoading(false);
   }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  if (loading && doctors.length === 0) return <div className="p-8 text-center">Cargando médicos...</div>;
+  if (loading && doctors.length === 0) {
+    return (
+      <div className="p-12 text-center flex flex-col items-center justify-center gap-4">
+        <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4"></div>
+        <p className="text-muted-foreground">Cargando médicos...</p>
+        {showSlowNetwork && (
+          <div className="mt-4 p-4 border border-destructive/20 bg-destructive/10 rounded-lg max-w-md text-sm">
+            <p className="font-semibold text-destructive mb-2">Parece que la conexión se atascó.</p>
+            <p className="text-muted-foreground mb-4">Esto ocurre a veces en desarrollo cuando la base de datos bloquea el almacenamiento local.</p>
+            <button 
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+              className="px-4 py-2 bg-destructive text-destructive-foreground font-medium rounded-md hover:bg-destructive/90 transition-colors"
+            >
+              Forzar Limpieza y Recargar
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <section className="space-y-6">
