@@ -17,6 +17,8 @@ import {
 import { useAuth } from "@/components/auth/AuthProvider";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { AppointmentForm } from "./AppointmentForm";
+import { PatientForm } from "./PatientForm";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -35,6 +37,10 @@ export function AppointmentManager() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  const [isAppointmentFormOpen, setIsAppointmentFormOpen] = useState(false);
+  const [isPatientFormOpen, setIsPatientFormOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<any | null>(null);
 
   const fetchAppointments = useCallback(async () => {
     if (authLoading || !user) return;
@@ -167,12 +173,45 @@ export function AppointmentManager() {
         </div>
 
         <button 
+          onClick={() => {
+            setEditingAppointment(null);
+            setIsAppointmentFormOpen(true);
+          }}
           className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105 cursor-pointer"
         >
           <Plus className="size-4" />
           Nueva Cita
         </button>
       </div>
+
+      {isAppointmentFormOpen && (
+        <AppointmentForm 
+          onClose={() => setIsAppointmentFormOpen(false)}
+          onSuccess={() => {
+            setIsAppointmentFormOpen(false);
+            fetchAppointments();
+          }}
+          onNewPatient={() => {
+            setIsAppointmentFormOpen(false);
+            setIsPatientFormOpen(true);
+          }}
+          initialData={editingAppointment}
+        />
+      )}
+
+      {isPatientFormOpen && (
+        <PatientForm
+          onClose={() => {
+            setIsPatientFormOpen(false);
+            // Optionally reopen appointment form here
+            setIsAppointmentFormOpen(true);
+          }}
+          onSuccess={() => {
+            setIsPatientFormOpen(false);
+            setIsAppointmentFormOpen(true); // Reopen to select the newly created patient
+          }}
+        />
+      )}
 
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         {viewMode === "calendar" ? (
