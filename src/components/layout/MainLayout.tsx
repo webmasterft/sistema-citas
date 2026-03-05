@@ -51,7 +51,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => signOut()}
-            className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+            className="p-2 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
             title="Cerrar sesión"
           >
             <LogOut className="size-5" />
@@ -59,30 +59,30 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             aria-label={isSidebarOpen ? "Cerrar menú" : "Abrir menú"}
-            className="rounded-md p-2 hover:bg-accent"
+            className="rounded-md p-2 hover:bg-accent cursor-pointer"
           >
             {isSidebarOpen ? <X className="size-6" /> : <Menu className="size-6" />}
           </button>
         </div>
       </header>
 
-      {/* Sidebar - Desktop & Mobile overlay */}
+      {/* Sidebar Backdrop - Mobile only */}
       <div
         className={cn(
-          "fixed inset-0 z-50 transition-all lg:static lg:block",
-          isSidebarOpen ? "visible bg-black/50 backdrop-blur-sm" : "invisible lg:visible"
+          "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity lg:hidden",
+          isSidebarOpen ? "opacity-100 visible" : "opacity-0 invisible"
         )}
         onClick={() => setIsSidebarOpen(false)}
+      />
+
+      {/* Sidebar Component */}
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transition-transform lg:z-30 lg:translate-x-0",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}
       >
-        <div
-          className={cn(
-            "h-full w-64 bg-card transition-transform lg:translate-x-0",
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          )}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Sidebar />
-        </div>
+        <Sidebar />
       </div>
 
       {/* Main Content Area */}

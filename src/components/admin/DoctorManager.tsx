@@ -11,6 +11,7 @@ export function DoctorManager() {
   const [institutions, setInstitutions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingDoctor, setEditingDoctor] = useState<any | null>(null);
   const [showSlowNetwork, setShowSlowNetwork] = useState(false);
 
   useEffect(() => {
@@ -71,7 +72,7 @@ export function DoctorManager() {
                 localStorage.clear();
                 window.location.reload();
               }}
-              className="px-4 py-2 bg-destructive text-destructive-foreground font-medium rounded-md hover:bg-destructive/90 transition-colors"
+              className="px-4 py-2 bg-destructive text-destructive-foreground font-medium rounded-md hover:bg-destructive/90 transition-colors cursor-pointer"
             >
               Forzar Limpieza y Recargar
             </button>
@@ -90,7 +91,7 @@ export function DoctorManager() {
         </div>
         <button 
           onClick={() => setIsFormOpen(true)}
-          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105"
+          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105 cursor-pointer"
         >
           <Plus className="size-4" />
           Registrar Médico
@@ -99,7 +100,11 @@ export function DoctorManager() {
 
       {isFormOpen && (
         <DoctorForm 
-          onClose={() => setIsFormOpen(false)} 
+          initialData={editingDoctor}
+          onClose={() => {
+            setIsFormOpen(false);
+            setEditingDoctor(null);
+          }} 
           onSuccess={fetchData} 
         />
       )}
@@ -146,10 +151,30 @@ export function DoctorManager() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-2 text-muted-foreground hover:text-foreground" aria-label="Editar">
+                        <button 
+                          onClick={() => {
+                            setEditingDoctor(doc);
+                            setIsFormOpen(true);
+                          }}
+                          className="p-2 text-muted-foreground hover:text-foreground cursor-pointer" 
+                          aria-label="Editar"
+                        >
                           <Pencil className="size-4" />
                         </button>
-                        <button className="p-2 text-muted-foreground hover:text-destructive" aria-label="Eliminar">
+                        <button 
+                          onClick={async () => {
+                            if (confirm("¿Está seguro de eliminar a este profesional?")) {
+                              const { error } = await (supabase
+                                .from("doctors_directory" as any)
+                                .delete()
+                                .eq("id", doc.id) as any);
+                              if (!error) fetchData();
+                              else alert("Error al eliminar");
+                            }
+                          }}
+                          className="p-2 text-muted-foreground hover:text-destructive cursor-pointer" 
+                          aria-label="Eliminar"
+                        >
                           <Trash2 className="size-4" />
                         </button>
                       </div>

@@ -34,6 +34,7 @@ export type Database = {
           objective: string | null
           patient_id: string
           plan: string | null
+          prescription: string | null
           subjective: string | null
         }
         Insert: {
@@ -45,6 +46,7 @@ export type Database = {
           objective?: string | null
           patient_id: string
           plan?: string | null
+          prescription?: string | null
           subjective?: string | null
         }
         Update: {
@@ -56,6 +58,7 @@ export type Database = {
           objective?: string | null
           patient_id?: string
           plan?: string | null
+          prescription?: string | null
           subjective?: string | null
         }
         Relationships: [
@@ -279,11 +282,13 @@ export type Database = {
           doctor_id: string
           email: string | null
           first_name: string
+          middle_name: string | null
           id: string
           id_number: string
           id_type: string | null
           insurance_provider_id: string | null
           last_name: string
+          second_last_name: string | null
           phone: string | null
           gender: string | null
         }
@@ -308,11 +313,13 @@ export type Database = {
           doctor_id?: string
           email?: string | null
           first_name?: string
+          middle_name?: string | null
           id?: string
           id_number?: string
           id_type?: string | null
           insurance_provider_id?: string | null
           last_name?: string
+          second_last_name?: string | null
           phone?: string | null
           gender?: string | null
         }

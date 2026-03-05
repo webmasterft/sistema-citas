@@ -10,6 +10,7 @@ export function InstitutionManager() {
   const [institutions, setInstitutions] = useState<Tables<"institutions">[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingInstitution, setEditingInstitution] = useState<Tables<"institutions"> | null>(null);
   const [showSlowNetwork, setShowSlowNetwork] = useState(false);
 
   useEffect(() => {
@@ -44,21 +45,32 @@ export function InstitutionManager() {
     fetchInstitutions();
   }, [fetchInstitutions]);
 
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`¿Estás seguro de eliminar la institución "${name}"?`)) return;
+    try {
+      const { error } = await supabase.from("institutions").delete().eq("id", id);
+      if (error) throw error;
+      fetchInstitutions();
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("No se pudo eliminar la institución.");
+    }
+  };
+
   if (loading && institutions.length === 0) {
     return (
       <div className="p-12 text-center flex flex-col items-center justify-center gap-4">
         <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4"></div>
         <p className="text-muted-foreground">Cargando instituciones...</p>
         {showSlowNetwork && (
-          <div className="mt-4 p-4 border border-destructive/20 bg-destructive/10 rounded-lg max-w-md text-sm">
+          <div className="mt-4 p-4 border border-destructive/20 bg-destructive/10 rounded-lg max-w-md text-sm text-left">
             <p className="font-semibold text-destructive mb-2">Parece que la conexión se atascó.</p>
-            <p className="text-muted-foreground mb-4">Esto ocurre a veces en desarrollo cuando la base de datos bloquea el almacenamiento local.</p>
             <button 
               onClick={() => {
                 localStorage.clear();
                 window.location.reload();
               }}
-              className="px-4 py-2 bg-destructive text-destructive-foreground font-medium rounded-md hover:bg-destructive/90 transition-colors"
+              className="px-4 py-2 bg-destructive text-destructive-foreground font-medium rounded-md hover:bg-destructive/90 transition-colors cursor-pointer"
             >
               Forzar Limpieza y Recargar
             </button>
@@ -76,8 +88,11 @@ export function InstitutionManager() {
           <p className="text-muted-foreground">Administra las clínicas y centros médicos del sistema.</p>
         </div>
         <button 
-          onClick={() => setIsFormOpen(true)}
-          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105"
+          onClick={() => {
+            setEditingInstitution(null);
+            setIsFormOpen(true);
+          }}
+          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105 cursor-pointer"
         >
           <Plus className="size-4" />
           Nueva Institución
@@ -86,8 +101,12 @@ export function InstitutionManager() {
 
       {isFormOpen && (
         <InstitutionForm 
-          onClose={() => setIsFormOpen(false)} 
+          onClose={() => {
+            setIsFormOpen(false);
+            setEditingInstitution(null);
+          }} 
           onSuccess={fetchInstitutions} 
+          initialData={editingInstitution}
         />
       )}
 
@@ -106,10 +125,21 @@ export function InstitutionManager() {
                   <Building2 className="size-6" />
                 </div>
                 <div className="flex gap-2">
-                  <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors" aria-label="Editar">
+                  <button 
+                    onClick={() => {
+                      setEditingInstitution(inst);
+                      setIsFormOpen(true);
+                    }}
+                    className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer" 
+                    aria-label="Editar"
+                  >
                     <Pencil className="size-4" />
                   </button>
-                  <button className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors" aria-label="Eliminar">
+                  <button 
+                    onClick={() => handleDelete(inst.id, inst.name)}
+                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer" 
+                    aria-label="Eliminar"
+                  >
                     <Trash2 className="size-4" />
                   </button>
                 </div>

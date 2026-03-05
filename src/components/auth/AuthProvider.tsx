@@ -33,17 +33,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Failsafe to ensure loading screen doesn't stay forever
     const timeout = setTimeout(() => {
-      if (loading) {
-        console.warn("AuthProvider: Failsafe triggered, forcing loading=false");
-        setLoading(false);
-      }
-    }, 3000);
+      // Usar un check interno para no depender de la variable 'loading' del estado que puede cambiar
+      setLoading(prev => {
+        if (prev) console.warn("AuthProvider: Failsafe triggered, forcing loading=false");
+        return false;
+      });
+    }, 5000);
 
     // Get initial session
     const initAuth = async () => {
-      if (initialized.current) return;
-      initialized.current = true;
-      
       try {
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         if (error) throw error;
@@ -78,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.error("Auth State Change Error:", err);
       } finally {
+        // Asegurarse de que el loading se apague en cualquier cambio de estado
         setLoading(false);
       }
     });
@@ -86,30 +85,94 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
       clearTimeout(timeout);
     };
-  }, [loading]);
+  }, []); // Solo al montar
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data } = await supabase
+      // Usar .select().eq().maybeSingle() para evitar errores si no existe
+      const { data, error } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
+      
+      if (error) throw error;
       
       if (data) {
         setRole(data.role);
+      } else {
+        console.warn("AuthProvider: No se encontró perfil para el usuario", userId);
+        setRole(null);
       }
     } catch (err) {
       console.error("AuthProvider Profile Error:", err);
     }
   };
 
+  useEffect(() => {
+    let mounted = true;
+
+    async function initialize() {
+      try {
+        // Intentar obtener la sesión inicial sin forzar lock
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        if (mounted) {
+          setSession(currentSession);
+          const newUser = currentSession?.user ?? null;
+          setUser(newUser);
+          
+          if (newUser) {
+            if (newUser.user_metadata?.role) {
+              setRole(newUser.user_metadata.role);
+            }
+            await fetchProfile(newUser.id);
+          }
+        }
+      } catch (err) {
+        console.error("Auth Init Error:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    initialize();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!mounted) return;
+
+      setSession(newSession);
+      const newUser = newSession?.user ?? null;
+      setUser(newUser);
+      
+      if (newUser) {
+        // Primero intentamos sacar el rol de los metadatos del usuario (es más rápido y seguro)
+        const metadataRole = newUser.user_metadata?.role;
+        if (metadataRole) {
+          setRole(metadataRole);
+        }
+        
+        // Luego intentamos actualizar con los datos reales del perfil si hiciera falta
+        await fetchProfile(newUser.id);
+      } else {
+        setRole(null);
+      }
+      
+      setLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     router.push("/login");
   };
 
-  // Basic route protection logic
+  // Redirección basada en auth
   useEffect(() => {
     if (!loading) {
       const isPublicRoute = pathname === "/login";
