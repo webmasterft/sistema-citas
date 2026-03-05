@@ -32,7 +32,7 @@ interface DaySchedule {
 }
 
 export function DoctorScheduleConfig() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [schedules, setSchedules] = useState<DaySchedule[]>(() =>
     DAYS.map((d) => ({
       day_of_week: d.value,
@@ -47,7 +47,7 @@ export function DoctorScheduleConfig() {
   const [savedMsg, setSavedMsg] = useState(false);
 
   const fetchSchedule = useCallback(async () => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     try {
       const { data } = await supabase
         .from("doctor_schedules" as any)
@@ -77,11 +77,16 @@ export function DoctorScheduleConfig() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     fetchSchedule();
-  }, [fetchSchedule]);
+  }, [fetchSchedule, user, authLoading]);
 
   const handleChange = (
     dayOfWeek: number,

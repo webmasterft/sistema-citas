@@ -13,6 +13,8 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+import { DatePicker } from "@/components/ui/DatePicker";
+
 interface DoctorFormProps {
   onClose: () => void;
   onSuccess: () => void;
@@ -26,6 +28,12 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
   const [specialtySearch, setSpecialtySearch] = useState("");
   const [isSpecialtyOpen, setIsSpecialtyOpen] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState(initialData?.specialty || "");
+  const [birthDate, setBirthDate] = useState<Date | null>(() => {
+    if (initialData?.birth_date) {
+      return new Date(initialData.birth_date + "T12:00:00");
+    }
+    return null;
+  });
 
   const filteredSpecialties = MEDICAL_SPECIALTIES.filter((s: string) => 
     s.toLowerCase().includes(specialtySearch.toLowerCase())
@@ -56,7 +64,7 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
     const phone = formData.get("phone") as string;
     const address = formData.get("address") as string;
     const experience_years = parseInt(formData.get("experience_years") as string);
-    const birth_date = formData.get("birth_date") as string;
+    const birth_date_val = birthDate ? birthDate.toISOString().split("T")[0] : null;
     const license_number = formData.get("license_number") as string;
     const institution_id = formData.get("institution_id") as string;
 
@@ -90,7 +98,7 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
         phone,
         address,
         experience_years,
-        birth_date,
+        birth_date: birth_date_val,
         license_number, 
         institution_id: institution_id || null,
         auth_user_id: authUserId
@@ -276,7 +284,12 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Fecha de Nacimiento</label>
-                  <input name="birth_date" type="date" defaultValue={initialData?.birth_date} required className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
+                  <DatePicker
+                    selected={birthDate}
+                    onChange={setBirthDate}
+                    maxDate={new Date()}
+                    placeholderText="Seleccione fecha"
+                  />
                 </div>
               </div>
             </div>
