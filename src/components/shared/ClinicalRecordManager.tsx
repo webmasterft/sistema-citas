@@ -16,6 +16,7 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [showSlowNetwork, setShowSlowNetwork] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let timer1: NodeJS.Timeout;
@@ -40,17 +41,26 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
       setLoading(true);
       const { data, error } = await supabase
         .from("clinical_history")
-        .select("*")
+        .select(`
+          *,
+          doctors_profile:profiles (
+            full_name,
+            specialty,
+            license_number
+          )
+        `)
         .eq("patient_id", patient.id)
         .order("created_at", { ascending: false });
       
       if (!error && data) {
         setRecords(data as any);
       } else if (error) {
-        console.error("Supabase Error:", error);
+        console.error("Supabase Error fetching clinical_history:", error);
+        setError("Error al cargar el historial: " + error.message);
       }
     } catch (err) {
       console.error("Error fetching records:", err);
+      setError("Error inesperado en la conexión.");
     } finally {
       setLoading(false);
     }
@@ -115,8 +125,8 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
             </div>
             <div style="text-align: right;">
               <h4 style="color: #2e74ac; border-bottom: 1px solid #eee; margin-bottom: 10px; font-size: 14px;">DRA / DR</h4>
-              <p style="margin: 0;"><strong>Profesional:</strong> ${record.doctors_directory?.full_name || 'Servicios Médicos'}</p>
-              <p style="margin: 0;"><strong>Especialidad:</strong> ${record.doctors_directory?.specialty || 'General'}</p>
+              <p style="margin: 0;"><strong>Profesional:</strong> ${record.doctors_profile?.full_name || 'Servicios Médicos'}</p>
+              <p style="margin: 0;"><strong>Especialidad:</strong> ${record.doctors_profile?.specialty || 'General'}</p>
             </div>
           </div>
 
@@ -128,7 +138,7 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
           <div class="prescription-footer">
             <div class="signature-line"></div>
             <p style="margin: 0; font-weight: bold;">Firma y Sello</p>
-            <p style="margin: 0; font-size: 11px; color: #888;">${record.doctors_directory?.phone || ''} | ${record.doctors_directory?.address || ''}</p>
+            <p style="margin: 0; font-size: 11px; color: #888;">${record.doctors_profile?.license_number ? 'Reg. Prof: ' + record.doctors_profile.license_number : ''}</p>
             <p style="margin-top: 20px; font-size: 10px; color: #aaa;">Documento emitido vía MedApp - Verificación: ${crypto.randomUUID().split('-')[0]}</p>
           </div>
         </body>
@@ -186,6 +196,16 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
             {showSlowNetwork && (
               <p className="mt-2 text-sm text-amber-500">La conexión está tardando más de lo esperado...</p>
             )}
+          </div>
+        ) : error ? (
+          <div className="rounded-xl border border-destructive/20 p-8 text-center bg-destructive/10">
+            <p className="text-destructive font-medium">{error}</p>
+            <button 
+              onClick={() => { setError(null); fetchRecords(); }}
+              className="mt-4 text-sm underline hover:no-underline"
+            >
+              Reintentar carga
+            </button>
           </div>
         ) : records.length === 0 ? (
               <div className="rounded-xl border border-dashed p-12 text-center bg-muted/20">

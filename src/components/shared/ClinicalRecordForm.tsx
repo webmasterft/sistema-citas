@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { X, Loader2, Save } from "lucide-react";
+import { X, Loader2, Save, Plus, FileText } from "lucide-react";
 import { translateError } from "@/lib/error-translator";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface ClinicalRecordFormProps {
   patientId: string;
@@ -10,8 +11,11 @@ interface ClinicalRecordFormProps {
 }
 
 export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRecordFormProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [showPrescription, setShowPrescription] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -22,13 +26,16 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
     const subjective = formData.get("subjective") as string;
     const objective = formData.get("objective") as string;
     const plan = formData.get("plan") as string;
-    const prescription = formData.get("prescription") as string;
+    const prescription = showPrescription ? (formData.get("prescription") as string) : "";
     const internal_notes = formData.get("internal_notes") as string;
     const assessment_cie10 = formData.get("assessment_cie10") as string;
 
-    // For demo, use current profile or placeholder
-    const { data: profiles } = await supabase.from("profiles").select("id").limit(1);
-    const doctor_id = profiles?.[0]?.id || crypto.randomUUID();
+    if (!user) {
+      setError("No hay sesión activa.");
+      setLoading(false);
+      return;
+    }
+    const doctor_id = user.id;
 
     const { error: submitError } = await supabase
       .from("clinical_history")
@@ -113,18 +120,40 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
             />
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="prescription" className="text-xs font-bold uppercase tracking-tight text-primary flex items-center gap-1.5">
-              <Save className="size-3" />
-              Receta Médica / Prescripción (Aparecerá en el documento de impresión)
-            </label>
-            <textarea
-              id="prescription"
-              name="prescription"
-              rows={3}
-              className="w-full rounded-md border-2 border-primary/10 bg-primary/5 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-primary shadow-inner font-mono"
-              placeholder="Ej: Paracetamol 500mg - 1 tableta cada 8 horas por 3 días..."
-            />
+          <div className="md:col-span-2 space-y-4">
+            {!showPrescription ? (
+              <button
+                type="button"
+                onClick={() => setShowPrescription(true)}
+                className="flex items-center gap-2 text-sm font-bold text-primary hover:bg-primary/5 px-4 py-2 rounded-lg border-2 border-dashed border-primary/20 transition-all w-full justify-center"
+              >
+                <Plus className="size-4" />
+                Emitir Receta Médica (Opcional)
+              </button>
+            ) : (
+              <div className="space-y-2 animate-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="prescription" className="text-xs font-bold uppercase tracking-tight text-primary flex items-center gap-1.5">
+                    <FileText className="size-3" />
+                    Receta Médica / Prescripción
+                  </label>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPrescription(false)}
+                    className="text-[10px] text-destructive hover:underline font-bold uppercase"
+                  >
+                    Quitar receta
+                  </button>
+                </div>
+                <textarea
+                  id="prescription"
+                  name="prescription"
+                  rows={4}
+                  className="w-full rounded-md border-2 border-primary/10 bg-primary/5 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-primary shadow-inner font-mono"
+                  placeholder="Ej: Paracetamol 500mg - 1 tableta cada 8 horas por 3 días..."
+                />
+              </div>
+            )}
           </div>
         </div>
 

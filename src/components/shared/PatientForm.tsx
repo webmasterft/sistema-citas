@@ -6,6 +6,8 @@ import { X, Loader2 } from "lucide-react";
 import { translateError } from "@/lib/error-translator";
 import { useAuth } from "@/components/auth/AuthProvider";
 
+import { DatePicker } from "@/components/ui/DatePicker";
+
 interface PatientFormProps {
   onClose: () => void;
   onSuccess: () => void;
@@ -16,6 +18,12 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [birthDate, setBirthDate] = useState<Date | null>(() => {
+    if (initialData?.birth_date) {
+      return new Date(initialData.birth_date + "T12:00:00");
+    }
+    return null;
+  });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -35,7 +43,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
     const first_name = `${firstName1} ${firstName2}`.trim();
     const last_name = `${lastName1} ${lastName2}`.trim();
     const id_number = formData.get("id_number") as string;
-    const birth_date = formData.get("birth_date") as string;
+    const birth_date_val = birthDate ? birthDate.toISOString().split("T")[0] : null;
     const gender = formData.get("gender") as string;
     const phone = formData.get("phone") as string;
     const email = formData.get("email") as string;
@@ -49,7 +57,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
             first_name,
             last_name,
             id_number, 
-            birth_date, 
+            birth_date: birth_date_val, 
             gender, 
             phone, 
             email, 
@@ -64,7 +72,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
             first_name,
             last_name,
             id_number, 
-            birth_date, 
+            birth_date: birth_date_val, 
             gender, 
             phone, 
             email, 
@@ -158,13 +166,12 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
 
           <div className="space-y-2">
             <label htmlFor="birth_date" className="text-sm font-medium text-foreground">Fecha de Nacimiento</label>
-            <input
+            <DatePicker
               id="birth_date"
-              name="birth_date"
-              type="date"
-              required
-              defaultValue={initialData?.birth_date}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring"
+              selected={birthDate}
+              onChange={setBirthDate}
+              maxDate={new Date()}
+              placeholderText="Seleccione fecha"
             />
           </div>
 

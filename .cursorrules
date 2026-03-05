@@ -1,0 +1,17 @@
+# Sistema de Citas - Directrices Específicas
+
+## UX/UI
+- **Botones**: TODOS los botones (`<button>`) deben incluir la clase `cursor-pointer` (o comportarse como tal mediante CSS global).
+- **Interactividad**: Los elementos interactivos deben tener feedback visual al hacer hover.
+
+## Roles y Permisos (Supabase Enums)
+- **Roles Permitidos**: Únicamente `admin`, `doctor` y `patient`.
+- **PROHIBIDO**: No usar el rol `webmaster` u otros que no existan en el esquema de la base de datos para evitar errores de enum.
+
+## Backend (Supabase/RLS)
+- **RLS**: Siempre verificar que existan políticas de Row Level Security para las nuevas tablas.
+- **Filtrado**: Los administradores deben ver todos los datos, mientras que los doctores solo ven sus propios pacientes (`doctor_id`).
+
+## Código
+- **Cerrar Sesión**: Usar `window.location.href = "/login"` para asegurar una limpieza completa del estado.
+- **Tipado**: Seguir estrictamente el esquema de `database.ts`.

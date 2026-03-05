@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useRouter, usePathname } from "next/navigation";
@@ -22,167 +22,112 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser]       = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole]       = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const router   = useRouter();
   const pathname = usePathname();
-  const initialized = React.useRef(false);
+  // Prevent double-initialization in React Strict Mode / double renders
+  const initialized = useRef(false);
 
+  // ─── Single canonical auth effect ────────────────────────────────────────
   useEffect(() => {
-    // Failsafe to ensure loading screen doesn't stay forever
-    const timeout = setTimeout(() => {
-      // Usar un check interno para no depender de la variable 'loading' del estado que puede cambiar
-      setLoading(prev => {
-        if (prev) console.warn("AuthProvider: Failsafe triggered, forcing loading=false");
-        return false;
-      });
-    }, 5000);
+    // Guard: only run once per mount
+    if (initialized.current) return;
+    initialized.current = true;
 
-    // Get initial session
-    const initAuth = async () => {
-      try {
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-        
-        if (initialSession?.user) {
-          await fetchProfile(initialSession.user.id);
-        }
-      } catch (err) {
-        console.error("AuthProvider Init Error:", err);
-      } finally {
-        setLoading(false);
-        clearTimeout(timeout);
-      }
-    };
-
-    initAuth();
-
-    // Listen for auth changes - ALWAYS subscribe
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-      try {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        
-        if (currentSession?.user) {
-          await fetchProfile(currentSession.user.id);
-        } else {
-          setRole(null);
-        }
-      } catch (err) {
-        console.error("Auth State Change Error:", err);
-      } finally {
-        // Asegurarse de que el loading se apague en cualquier cambio de estado
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
-  }, []); // Solo al montar
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      // Usar .select().eq().maybeSingle() para evitar errores si no existe
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", userId)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      if (data) {
-        setRole(data.role);
-      } else {
-        console.warn("AuthProvider: No se encontró perfil para el usuario", userId);
-        setRole(null);
-      }
-    } catch (err) {
-      console.error("AuthProvider Profile Error:", err);
-    }
-  };
-
-  useEffect(() => {
     let mounted = true;
 
-    async function initialize() {
-      try {
-        // Intentar obtener la sesión inicial sin forzar lock
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        
-        if (mounted) {
-          setSession(currentSession);
-          const newUser = currentSession?.user ?? null;
-          setUser(newUser);
-          
-          if (newUser) {
-            if (newUser.user_metadata?.role) {
-              setRole(newUser.user_metadata.role);
-            }
-            await fetchProfile(newUser.id);
-          }
-        }
-      } catch (err) {
-        console.error("Auth Init Error:", err);
-      } finally {
-        if (mounted) setLoading(false);
+    // Hard failsafe – prevents infinite spinner if Supabase is down
+    const failsafe = setTimeout(() => {
+      if (mounted) {
+        console.warn("AuthProvider: failsafe – forcing loading=false");
+        setLoading(false);
       }
-    }
+    }, 8000);
 
-    initialize();
+    // Fetch role from `profiles` table
+    const fetchRole = async (userId: string): Promise<string | null> => {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .maybeSingle();
+        if (error) throw error;
+        return data?.role ?? null;
+      } catch (err) {
+        console.error("AuthProvider fetchRole error:", err);
+        return null;
+      }
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    // Apply a session to state (sets user, session and role atomically)
+    const applySession = async (s: Session | null) => {
       if (!mounted) return;
+      setSession(s);
+      setUser(s?.user ?? null);
 
-      setSession(newSession);
-      const newUser = newSession?.user ?? null;
-      setUser(newUser);
-      
-      if (newUser) {
-        // Primero intentamos sacar el rol de los metadatos del usuario (es más rápido y seguro)
-        const metadataRole = newUser.user_metadata?.role;
-        if (metadataRole) {
-          setRole(metadataRole);
-        }
-        
-        // Luego intentamos actualizar con los datos reales del perfil si hiciera falta
-        await fetchProfile(newUser.id);
+      if (s?.user) {
+        // Fast path: role in metadata (set at sign-up)
+        const metaRole = s.user.user_metadata?.role as string | undefined;
+        if (metaRole) setRole(metaRole);
+
+        // Authoritative path: always sync from DB
+        const dbRole = await fetchRole(s.user.id);
+        if (mounted && dbRole) setRole(dbRole);
       } else {
         setRole(null);
       }
-      
-      setLoading(false);
+    };
+
+    // 1. Bootstrap – get current session once
+    supabase.auth.getSession().then(async ({ data: { session: initial } }) => {
+      await applySession(initial);
+      if (mounted) {
+        setLoading(false);
+        clearTimeout(failsafe);
+      }
     });
+
+    // 2. Listen for subsequent changes (sign-in, sign-out, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, newSession) => {
+        if (!mounted) return;
+        await applySession(newSession);
+        setLoading(false);
+        clearTimeout(failsafe);
+      }
+    );
 
     return () => {
       mounted = false;
+      clearTimeout(failsafe);
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // ← empty deps: run only on mount
+
+  // ─── Route protection ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (loading) return; // wait until auth is resolved
+    const isPublic = pathname === "/login";
+    if (!session && !isPublic) router.push("/login");
+    else if (session && isPublic) router.push("/");
+  }, [session, loading, pathname, router]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
-
-  // Redirección basada en auth
-  useEffect(() => {
-    if (!loading) {
-      const isPublicRoute = pathname === "/login";
-      if (!session && !isPublicRoute) {
-        router.push("/login");
-      } else if (session && isPublicRoute) {
-        router.push("/");
-      }
+    try {
+      setLoading(true);
+      await supabase.auth.signOut();
+      localStorage.removeItem("medapp-auth-token");
+      // Use window.location for a hard reset to clear all state/cache safely
+      window.location.href = "/login";
+    } catch (err) {
+      console.error("Error signing out:", err);
+      window.location.href = "/login";
     }
-  }, [session, loading, pathname, router]);
+  };
 
   return (
     <AuthContext.Provider value={{ user, session, role, loading, signOut }}>

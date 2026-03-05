@@ -10,7 +10,8 @@ import { useAuth } from "@/components/auth/AuthProvider";
 
 export function PatientManager() {
   const { user, role, loading: authLoading } = useAuth();
-  const isDoctor = role === "doctor";
+  // Only treat user as a doctor once auth is fully resolved
+  const isDoctor = !authLoading && role === "doctor";
   const [patients, setPatients] = useState<Tables<"patients">[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -18,6 +19,7 @@ export function PatientManager() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPatientForHistory, setSelectedPatientForHistory] = useState<Tables<"patients"> | null>(null);
   const [showSlowNetwork, setShowSlowNetwork] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let timer1: NodeJS.Timeout;
@@ -46,13 +48,20 @@ export function PatientManager() {
   const fetchPatients = useCallback(async () => {
     try {
       setLoading(true);
+      console.log("Fetching patients for user:", user?.id, "with role:", role);
+      
       let query = supabase
         .from("patients")
         .select("*")
         .order("last_name");
       
-      if (isDoctor && user) {
+      // Solo filtrar si NO es administrador
+      const isAdmin = role === "admin";
+      if (!isAdmin && user) {
+        console.log("Applying doctor filter for ID:", user.id);
         query = query.eq("doctor_id", user.id);
+      } else {
+        console.log("Admin access: Fetching all patients");
       }
       
       if (searchQuery) {
@@ -63,22 +72,27 @@ export function PatientManager() {
       
       if (!error && data) {
         setPatients(data);
+        setError(null);
+      } else if (error) {
+        console.error("Supabase Error fetching patients:", error);
+        setError("Error al cargar pacientes: " + error.message);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Fetch patients error:", err);
+      setError("Fallo de conexión al cargar pacientes.");
     } finally {
       setLoading(false);
     }
   }, [searchQuery, isDoctor, user]);
 
   useEffect(() => {
-    if (authLoading) return;
-    
+    if (authLoading) return; // wait for auth to settle
+
     if (!user) {
       setLoading(false);
       return;
     }
-    
+
     fetchPatients();
   }, [fetchPatients, user, authLoading]);
 
@@ -153,6 +167,19 @@ export function PatientManager() {
                   <td colSpan={5} className="px-6 py-12 text-center">
                     <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-4"></div>
                     <p className="text-muted-foreground">Cargando pacientes...</p>
+                    {showSlowNetwork && <p className="text-xs text-amber-500 mt-2">Esto está tardando más de lo normal...</p>}
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <div className="text-destructive font-medium mb-4">{error}</div>
+                    <button 
+                      onClick={() => { setError(null); fetchPatients(); }}
+                      className="text-sm px-4 py-2 bg-muted rounded-md border hover:bg-muted/80 transition-colors"
+                    >
+                      Reintentar carga
+                    </button>
                   </td>
                 </tr>
               ) : patients.length === 0 ? (

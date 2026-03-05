@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { X, Loader2, Plus, CalendarDays, Clock } from "lucide-react";
+import { X, Loader2, Plus, CalendarDays, Clock, Stethoscope } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Tables } from "@/types/database";
 import { getAvailableSlots, TimeSlot } from "@/lib/scheduling";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { format } from "date-fns";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -21,7 +24,7 @@ interface AppointmentFormProps {
 }
 
 export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData }: AppointmentFormProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading, role } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [patients, setPatients] = useState<Tables<"patients">[]>([]);
@@ -50,16 +53,37 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
   const [reason, setReason] = useState<string>(initialData?.reason || "");
   const [status, setStatus] = useState<string>(initialData?.status || "pending");
 
-  // Fetch patients for this doctor
+  // Admin-only: doctor selector
+  const isAdmin = role === "admin" || role === "webmaster";
+  const [adminDoctors, setAdminDoctors] = useState<any[]>([]);
+  const [adminSelectedDoctorId, setAdminSelectedDoctorId] = useState<string>(initialData?.doctor_id || "");
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+
+  // The effective doctor ID: for doctors it's ALWAYS user.id, for admins it's their selection
+  const effectiveDoctorId = isAdmin ? adminSelectedDoctorId : user?.id ?? "";
+
+  // Fetch patients – uses effectiveDoctorId which is stable for doctors
   useEffect(() => {
+    if (authLoading || !user) {
+      setLoadingPatients(false);
+      return;
+    }
+    if (!effectiveDoctorId) {
+      // Admin hasn't selected a doctor yet
+      setPatients([]);
+      setLoadingPatients(false);
+      return;
+    }
+
     async function fetchPatients() {
-      if (!user) return;
       try {
+        setLoadingPatients(true);
         const { data, error } = await supabase
           .from("patients")
           .select("*")
-          .eq("doctor_id", user.id)
+          .eq("doctor_id", effectiveDoctorId)
           .order("first_name");
+
         if (!error && data) setPatients(data);
       } catch (err) {
         console.error("Error fetching patients", err);
@@ -68,11 +92,25 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
       }
     }
     fetchPatients();
-  }, [user]);
+  }, [user, authLoading, effectiveDoctorId]);
 
-  // Fetch available slots when date changes
+  // Admin-only: fetch doctors list
   useEffect(() => {
-    if (!selectedDate || !user) {
+    if (!isAdmin || authLoading) return;
+    async function fetchDoctors() {
+      setLoadingDoctors(true);
+      const { data } = await (supabase
+        .from("doctors_directory" as any)
+        .select("id, full_name, specialty") as any);
+      if (data) setAdminDoctors(data);
+      setLoadingDoctors(false);
+    }
+    fetchDoctors();
+  }, [isAdmin, authLoading]);
+
+  // Fetch available slots when date or doctor changes
+  useEffect(() => {
+    if (authLoading || !effectiveDoctorId || !selectedDate) {
       setSlots([]);
       return;
     }
@@ -80,21 +118,29 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
     setScheduleError(null);
     setSelectedSlot("");
 
-    getAvailableSlots(user.id, selectedDate).then(({ slots: s, slotDuration: sd, error: e }) => {
-      if (e) {
-        setScheduleError(e);
-        setSlots([]);
-      } else {
-        setSlots(s);
-        setSlotDuration(sd);
-      }
-      setLoadingSlots(false);
-    });
-  }, [selectedDate, user]);
+    getAvailableSlots(effectiveDoctorId, selectedDate)
+      .then(({ slots: s, slotDuration: sd, error: e }) => {
+        if (e) {
+          setScheduleError(e);
+          setSlots([]);
+        } else {
+          setSlots(s || []);
+          setSlotDuration(sd || 30);
+        }
+      })
+      .catch((err) => {
+        console.error("Error in getAvailableSlots:", err);
+        setScheduleError("Error al conectar con la base de datos.");
+      })
+      .finally(() => {
+        setLoadingSlots(false);
+      });
+  }, [selectedDate, effectiveDoctorId, authLoading]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) { setError("No hay una sesión activa."); return; }
+    if (!effectiveDoctorId) { setError("Seleccione un médico."); return; }
     if (!patientId) { setError("Seleccione un paciente."); return; }
     if (!selectedDate) { setError("Seleccione una fecha."); return; }
     if (!selectedSlot) { setError("Seleccione un horario disponible."); return; }
@@ -108,7 +154,7 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
     const endDate = new Date(startDate.getTime() + slotDuration * 60 * 1000);
 
     const payload = {
-      doctor_id: user.id,
+      doctor_id: effectiveDoctorId,
       patient_id: patientId,
       start_time: startDate.toISOString(),
       end_time: endDate.toISOString(),
@@ -137,16 +183,20 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
     }
   }
 
-  // Get the minimum date (today)
-  const today = new Date().toISOString().split("T")[0];
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
 
-  const availableCount = slots.filter((s) => s.isAvailable).length;
+  const patientOptions = patients.map((p) => ({
+    id: p.id,
+    label: `${p.first_name} ${p.last_name}`,
+    subLabel: `ID: ${p.id_number}`,
+  }));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl rounded-xl border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-2xl rounded-xl border bg-card shadow-2xl relative max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between z-10">
+        <div className="px-6 py-4 flex items-center justify-between border-b shrink-0">
           <div>
             <h2 className="text-lg font-bold">{initialData ? "Editar Cita" : "Agendar Nueva Cita"}</h2>
             <p className="text-xs text-muted-foreground">Complete los campos y seleccione un horario disponible.</p>
@@ -161,10 +211,34 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        {/* Scrollable Form */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
           {error && (
             <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive border border-destructive/20">
               {error}
+            </div>
+          )}
+
+          {/* Doctor selector — admin only */}
+          {isAdmin && (
+            <div className="space-y-2">
+              <label className="text-sm font-semibold flex items-center gap-2">
+                <Stethoscope className="size-4 text-primary" /> Médico Responsable <span className="text-destructive">*</span>
+              </label>
+              {loadingDoctors ? (
+                <div className="h-10 w-full animate-pulse bg-muted rounded-md" />
+              ) : (
+                <SearchableSelect
+                  options={adminDoctors.map((d) => ({
+                    id: d.id,
+                    label: d.full_name,
+                    subLabel: d.specialty,
+                  }))}
+                  value={adminSelectedDoctorId}
+                  onChange={setAdminSelectedDoctorId}
+                  placeholder="Seleccione el médico para esta cita"
+                />
+              )}
             </div>
           )}
 
@@ -177,82 +251,65 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
               <button
                 type="button"
                 onClick={onNewPatient}
-                className="text-xs text-primary flex items-center gap-1 hover:underline cursor-pointer"
+                className="text-[10px] h-6 px-2 rounded bg-secondary text-secondary-foreground hover:bg-secondary/80 font-bold flex items-center gap-1 transition-all active:scale-95 shadow-sm border border-secondary cursor-pointer uppercase tracking-wider"
               >
-                <Plus className="size-3" /> Registrar nuevo
+                <Plus className="size-2.5" /> Registrar nuevo
               </button>
             </div>
             {loadingPatients ? (
               <div className="h-10 w-full animate-pulse bg-muted rounded-md" />
             ) : (
-              <select
+              <SearchableSelect
                 id="patient_id"
+                options={patientOptions}
                 value={patientId}
-                onChange={(e) => setPatientId(e.target.value)}
-                required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="" disabled>Seleccione un paciente</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.first_name} {p.last_name} — {p.id_number}
-                  </option>
-                ))}
-              </select>
+                onChange={setPatientId}
+                placeholder="Seleccione un paciente"
+                searchPlaceholder="Buscar por nombre o identificación..."
+              />
             )}
           </div>
 
           {/* Date selector */}
           <div className="space-y-2">
-            <label htmlFor="appt_date" className="text-sm font-semibold flex items-center gap-1.5">
-              <CalendarDays className="size-4 text-muted-foreground" />
-              Fecha de la cita <span className="text-destructive">*</span>
+            <label className="text-sm font-semibold flex items-center gap-2">
+              <CalendarDays className="size-4 text-primary" /> Fecha de la cita <span className="text-destructive">*</span>
             </label>
-            <input
-              type="date"
-              id="appt_date"
-              value={selectedDate}
-              min={today}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              required
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            <DatePicker
+              selected={selectedDate ? new Date(selectedDate + "T12:00:00") : null}
+              onChange={(date) => {
+                if (date) {
+                  setSelectedDate(format(date, "yyyy-MM-dd"));
+                } else {
+                  setSelectedDate("");
+                }
+              }}
+              minDate={todayDate}
+              placeholderText="Seleccione el día"
             />
           </div>
 
-          {/* Slot picker */}
+          {/* Available Slots */}
           {selectedDate && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold flex items-center gap-1.5">
-                  <Clock className="size-4 text-muted-foreground" />
-                  Horario disponible <span className="text-destructive">*</span>
-                </label>
-                {!loadingSlots && !scheduleError && (
-                  <span className="text-xs text-muted-foreground">
-                    {availableCount} turno{availableCount !== 1 ? "s" : ""} disponible{availableCount !== 1 ? "s" : ""}
-                  </span>
-                )}
-              </div>
+              <label className="text-sm font-semibold flex items-center gap-2">
+                <Clock className="size-4 text-primary" /> Horarios disponibles
+              </label>
 
               {loadingSlots ? (
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30 border border-dashed">
-                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Calculando disponibilidad...</span>
+                <div className="py-8 flex flex-col items-center justify-center gap-2 text-muted-foreground animate-pulse">
+                  <Loader2 className="size-6 animate-spin text-primary" />
+                  <p className="text-sm font-medium">Calculando turnos disponibles...</p>
                 </div>
               ) : scheduleError ? (
-                <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-600">
-                  <strong>Sin horario configurado.</strong> {scheduleError}
-                  <p className="mt-1 text-xs">Configure su horario en la pestaña "Horario" del panel.</p>
-                </div>
-              ) : slots.length === 0 ? (
-                <div className="p-4 rounded-lg bg-muted/30 border border-dashed text-sm text-muted-foreground text-center">
-                  No hay turnos disponibles para este día.
+                <div className="rounded-md bg-amber-500/10 p-4 text-center border border-amber-500/20">
+                  <p className="text-sm text-amber-600 font-medium">{scheduleError}</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 max-h-52 overflow-y-auto pr-1">
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                   {slots.map((slot) => {
-                    const isPast = slot.reason === "past";
-                    const isBooked = slot.reason === "booked";
+                    const isBooked = !slot.isAvailable && slot.reason === "booked";
+                    const isPast = !slot.isAvailable && slot.reason === "past";
                     const isSelected = selectedSlot === slot.time;
 
                     return (
@@ -261,24 +318,17 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
                         type="button"
                         disabled={!slot.isAvailable}
                         onClick={() => setSelectedSlot(slot.time)}
-                        aria-pressed={isSelected}
                         className={cn(
-                          "rounded-lg border text-xs font-medium py-2.5 transition-all cursor-pointer",
-                          isSelected
-                            ? "bg-primary text-primary-foreground border-primary shadow-md scale-[1.05]"
-                            : slot.isAvailable
-                            ? "bg-background hover:bg-primary/10 hover:border-primary/50 border-input"
+                          "py-2 text-sm font-medium rounded-lg border transition-all text-center",
+                          slot.isAvailable
+                            ? isSelected
+                              ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-105"
+                              : "bg-background hover:border-primary hover:text-primary cursor-pointer"
                             : isPast
-                            ? "bg-muted/20 text-muted-foreground/40 border-muted/20 cursor-not-allowed line-through"
-                            : "bg-destructive/10 text-destructive/50 border-destructive/20 cursor-not-allowed relative"
+                              ? "bg-muted/20 text-muted-foreground/40 border-muted/20 cursor-not-allowed line-through"
+                              : "bg-destructive/10 text-destructive/50 border-destructive/20 cursor-not-allowed relative"
                         )}
-                        title={
-                          isPast
-                            ? "Hora ya pasada"
-                            : isBooked
-                            ? "Turno ocupado"
-                            : slot.time
-                        }
+                        title={isPast ? "Hora ya pasada" : isBooked ? "Turno ocupado" : slot.time}
                       >
                         {slot.time}
                         {isBooked && (
@@ -299,7 +349,7 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
               id="status"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
             >
               <option value="pending">Pendiente</option>
               <option value="confirmed">Confirmada</option>
