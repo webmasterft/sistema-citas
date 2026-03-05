@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { translateError } from "@/lib/error-translator";
-import { X, Loader2, Stethoscope, Search, Check, ChevronDown, Lock, ShieldCheck } from "lucide-react";
+import { X, Loader2, Stethoscope, Search, Check, ChevronDown, Lock, ShieldCheck, Camera, User } from "lucide-react";
 import { MEDICAL_SPECIALTIES } from "@/lib/constants";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -34,6 +34,8 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
     }
     return null;
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>(initialData?.avatar_url || "");
 
   const filteredSpecialties = MEDICAL_SPECIALTIES.filter((s: string) => 
     s.toLowerCase().includes(specialtySearch.toLowerCase())
@@ -66,29 +68,62 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
     const experience_years = parseInt(formData.get("experience_years") as string);
     const birth_date_val = birthDate ? birthDate.toISOString().split("T")[0] : null;
     const license_number = formData.get("license_number") as string;
+    const ruc = formData.get("ruc") as string;
     const institution_id = formData.get("institution_id") as string;
 
     try {
+      let avatarUrl = initialData?.avatar_url;
+
+      // 1. Subir avatar si hay uno nuevo
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `avatars/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, avatarFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+        
+        avatarUrl = publicUrl;
+      }
+
       let authUserId = initialData?.auth_user_id;
+      
+      const doctorData = {
+        fullName: full_name,
+        avatarUrl,
+        specialty: selectedSpecialty,
+        licenseNumber: license_number,
+        phone,
+        address,
+        birthDate: birth_date_val || undefined,
+        experienceYears: experience_years,
+        ruc,
+        institutionId: institution_id || undefined,
+        email
+      };
 
       // Gestión de cuenta de usuario (Auth)
-      if (!authUserId && password) {
-        // Si no tiene cuenta (nuevo o error previo) y hay contraseña -> Crear
-        const authResult = await createDoctorAccount(email, password, full_name);
+      if (!authUserId && (password || !initialData)) {
+        // CREAR CUENTA
+        const authResult = await createDoctorAccount(email, password, full_name, doctorData);
         if (!authResult.success) throw new Error(authResult.error || "Error al crear cuenta");
         authUserId = authResult.userId;
       } 
       else if (authUserId) {
-        // Si ya tiene cuenta, verificar si hay cambios que requieran actualización
-        const updates: any = {};
+        // ACTUALIZAR CUENTA
+        const updates: any = { ...doctorData };
         if (password) updates.password = password;
         if (email !== initialData.email) updates.email = email;
-        if (full_name !== initialData.full_name) updates.fullName = full_name;
 
-        if (Object.keys(updates).length > 0) {
-          const authResult = await updateDoctorAccount(authUserId, updates);
-          if (!authResult.success) throw new Error(authResult.error || "Error al actualizar cuenta");
-        }
+        const authResult = await updateDoctorAccount(authUserId, updates);
+        if (!authResult.success) throw new Error(authResult.error || "Error al actualizar cuenta");
       }
 
       const doctorPayload = { 
@@ -100,6 +135,7 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
         experience_years,
         birth_date: birth_date_val,
         license_number, 
+        ruc,
         institution_id: institution_id || null,
         auth_user_id: authUserId
       };
@@ -143,6 +179,33 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="flex flex-col items-center gap-4 mb-8">
+            <div className="relative group">
+              <div className="size-32 rounded-3xl bg-slate-100 overflow-hidden border-4 border-white shadow-lg flex items-center justify-center">
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="size-12 text-slate-300" />
+                )}
+              </div>
+              <label className="absolute -bottom-2 -right-2 p-2 bg-primary text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition-transform active:scale-95">
+                <Camera className="size-4" />
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setAvatarFile(file);
+                      setAvatarPreview(URL.createObjectURL(file));
+                    }
+                  }} 
+                />
+              </label>
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Foto de Perfil (Opcional)</p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Información Básica */}
             <div className="space-y-4 md:col-span-2">
@@ -275,6 +338,11 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Número de Licencia / MSP</label>
                   <input name="license_number" defaultValue={initialData?.license_number} required className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-mono" placeholder="REG-MSP-12345" />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold">RUC Personal / RISE</label>
+                  <input name="ruc" defaultValue={initialData?.ruc} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-mono" placeholder="1712345678001" />
                 </div>
 
                 <div className="space-y-2">

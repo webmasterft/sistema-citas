@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { X, Loader2, Plus, CalendarDays, Clock, Stethoscope } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -109,6 +109,7 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
   }, [isAdmin, authLoading]);
 
   // Fetch available slots when date or doctor changes
+  const isFirstSlotLoad = useRef(!!initialData);
   useEffect(() => {
     if (authLoading || !effectiveDoctorId || !selectedDate) {
       setSlots([]);
@@ -116,7 +117,11 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
     }
     setLoadingSlots(true);
     setScheduleError(null);
-    setSelectedSlot("");
+
+    // Only clear slot selection when user actively changes date, not on initial edit load
+    if (!isFirstSlotLoad.current) {
+      setSelectedSlot("");
+    }
 
     getAvailableSlots(effectiveDoctorId, selectedDate)
       .then(({ slots: s, slotDuration: sd, error: e }) => {
@@ -124,8 +129,17 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
           setScheduleError(e);
           setSlots([]);
         } else {
-          setSlots(s || []);
+          const fetchedSlots = s || [];
+          setSlots(fetchedSlots);
           setSlotDuration(sd || 30);
+
+          // On first load for editing, restore the original slot and mark it available
+          if (isFirstSlotLoad.current && initialData?.start_time) {
+            const d = new Date(initialData.start_time);
+            const originalSlot = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+            setSelectedSlot(originalSlot);
+            isFirstSlotLoad.current = false;
+          }
         }
       })
       .catch((err) => {

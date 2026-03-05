@@ -12,7 +12,7 @@ import {
   Clock
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -26,72 +26,91 @@ const menuItems = [
   { icon: Stethoscope, label: "Médicos", href: "/?tab=doctors", roles: ["admin", "webmaster"] },
   { icon: Users, label: "Pacientes", href: "/?tab=patients", roles: ["admin", "webmaster", "doctor"] },
   { icon: Clock, label: "Citas", href: "/?tab=appointments", roles: ["doctor", "admin", "webmaster"] },
-  { icon: Settings, label: "Configuración", href: "/?tab=settings", roles: ["admin", "webmaster", "doctor"] },
+  { icon: Settings, label: "Configuración", href: "/?tab=configuracion", roles: ["admin", "webmaster", "doctor"] },
 ];
 
-export function Sidebar() {
-  const { signOut, user, role } = useAuth();
+export function Sidebar({ onClose }: { onClose?: () => void }) {
+  const { signOut, user, role, profile, refreshProfile } = useAuth();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const activeTab = searchParams.get("tab") || "dashboard";
 
-  console.log("Sidebar Debug - User:", user?.email, "Role:", role);
-
   return (
-    <aside className="w-full h-full bg-card p-6">
-      <div className="flex flex-col h-full">
-        <div className="mb-10 flex items-center gap-2">
-          <div className="size-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
-            M
-          </div>
-          <span className="text-xl font-bold tracking-tight">MedApp</span>
+    <aside className="h-full flex flex-col bg-background p-6">
+      <div className="flex items-center gap-3 mb-10 px-2 transition-transform hover:scale-105 duration-200">
+        <div className="size-10 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-lg shadow-primary/20">
+          M
         </div>
-        
-        <nav className="flex-1">
-          <ul className="space-y-2">
-            {menuItems
-              .filter(item => !item.roles || (role && item.roles.includes(role)))
-              .map((item) => {
-                const isActive = (item.href === "/" && !searchParams.get("tab")) || 
-                                 (item.href.includes(`tab=${activeTab}`));
-              
-              return (
-                <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
-                      isActive 
-                        ? "bg-primary/10 text-primary shadow-sm" 
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    )}
-                  >
-                    <item.icon className="size-4" />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-        
-        <div className="pt-6 border-t mt-auto space-y-4">
-          <div className="flex items-center gap-3 px-3 py-2">
-             <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-               {user?.email?.[0].toUpperCase()}
-             </div>
-             <div className="flex-1 overflow-hidden">
-               <p className="text-xs font-bold truncate">{user?.email}</p>
-             </div>
-          </div>
-          <button 
-            onClick={() => signOut()}
-            className="flex cursor-pointer w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
-          >
-            <LogOut className="size-4" />
-            Cerrar Sesión
-          </button>
-          <p className="text-[10px] text-muted-foreground text-center">Ecuador v1.0.0</p>
+        <div className="flex flex-col">
+          <span className="text-xl font-bold tracking-tight text-[#0F172A]">MedApp</span>
+          <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold -mt-1">Gestión Médica</span>
         </div>
+      </div>
+      
+      <nav className="flex-1">
+        <ul className="space-y-1.5">
+          {menuItems
+            .filter(item => !item.roles || (role && item.roles.includes(role)))
+            .map((item) => {
+              const isActive = (item.href === "/" && !searchParams.get("tab")) || 
+                               (item.href.includes(`tab=${activeTab}`));
+            
+            return (
+              <li key={item.label}>
+                <Link
+                  href={item.href}
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-all duration-200 cursor-pointer group",
+                    isActive 
+                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/10" 
+                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                  )}
+                >
+                  <item.icon className={cn("size-5 transition-transform group-hover:scale-110", isActive ? "text-primary-foreground" : "text-slate-400")} />
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      
+      <div className="mt-auto space-y-4">
+        <div 
+          onClick={() => router.push("/?tab=configuracion")} 
+          className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:bg-slate-100 hover:shadow-sm cursor-pointer group"
+        >
+          {profile?.avatar_url ? (
+            <img 
+              src={profile.avatar_url} 
+              alt={profile.full_name} 
+              className="size-10 rounded-2xl object-cover shadow-sm"
+            />
+          ) : (
+            <div className="size-10 rounded-2xl bg-[#0F172A] flex items-center justify-center text-sm font-bold text-white shadow-sm">
+              {profile?.full_name?.[0].toUpperCase() || user?.email?.[0].toUpperCase()}
+            </div>
+          )}
+          <div className="flex-1 overflow-hidden">
+            <p className="text-xs font-bold text-[#0F172A] truncate">
+              {profile?.full_name || `Dr. ${user?.email?.split('@')[0]}`}
+            </p>
+            <p className="text-[10px] text-slate-400 font-medium truncate uppercase tracking-tighter">
+              {profile?.specialty || "Médico Especialista"}
+            </p>
+          </div>
+        </div>
+
+        <button 
+          onClick={() => signOut()}
+          className="flex cursor-pointer w-full items-center justify-center gap-3 rounded-2xl bg-red-50 py-3 text-sm font-bold text-red-500 transition-all hover:bg-red-100 border-none shadow-sm hover:shadow-md"
+        >
+          <LogOut className="size-4" />
+          Cerrar Sesión
+        </button>
+        
+        <p className="text-[10px] text-slate-300 font-medium text-center tracking-widest uppercase">Ecuador v1.0.0</p>
       </div>
     </aside>
   );

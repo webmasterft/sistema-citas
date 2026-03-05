@@ -12,7 +12,8 @@ import {
   User, 
   MoreVertical,
   CalendarDays,
-  List
+  List,
+  Loader2
 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { clsx, type ClassValue } from "clsx";
@@ -110,7 +111,7 @@ export function AppointmentManager() {
 
       days.push(
         <div key={d} className={cn(
-          "h-32 border-b border-r border-muted/20 p-2 transition-colors hover:bg-accent/5 relative group",
+          "h-32 border-b border-r border-muted/20 p-2 transition-colors hover:bg-accent/5 relative group overflow-hidden",
           isToday && "bg-primary/5"
         )}>
           <span className={cn(
@@ -120,20 +121,26 @@ export function AppointmentManager() {
             {d}
           </span>
           
-          <div className="mt-2 space-y-1 overflow-y-auto max-h-[calc(100%-2rem)]">
+          <div className="mt-1 space-y-0.5 overflow-y-auto max-h-[calc(100%-2rem)]">
             {dayAppointments.map(app => (
-              <div 
-                key={app.id} 
+              <button 
+                key={app.id}
+                type="button"
+                onClick={() => {
+                  setEditingAppointment(app);
+                  setIsAppointmentFormOpen(true);
+                }}
                 className={cn(
-                  "text-[10px] px-2 py-1 rounded border truncate cursor-pointer transition-all hover:scale-[1.02]",
-                  app.status === 'confirmed' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
-                  app.status === 'cancelled' ? "bg-destructive/10 border-destructive/20 text-destructive" :
-                  "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                  "w-full text-left text-[10px] px-1.5 py-0.5 rounded-lg border-none truncate cursor-pointer transition-all hover:scale-[1.02] hover:brightness-105",
+                  app.status === 'confirmed' ? "bg-emerald-100 text-emerald-700" :
+                  app.status === 'cancelled' ? "bg-red-100 text-red-700" :
+                  app.status === 'completed' ? "bg-slate-100 text-slate-600 font-medium" :
+                  "bg-amber-100 text-amber-700 font-bold shadow-sm"
                 )}
-                title={`${app.patients.first_name} - ${app.reason}`}
+                title={`${app.patients.first_name} ${app.patients.last_name} — ${app.reason || 'Sin motivo'}`}
               >
                 {new Date(app.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} {app.patients.last_name}
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -215,93 +222,115 @@ export function AppointmentManager() {
 
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         {viewMode === "calendar" ? (
-          <div>
-            <div className="p-4 border-b flex items-center justify-between bg-muted/5">
-              <h3 className="text-lg font-bold capitalize">{monthName} {year}</h3>
-              <div className="flex items-center gap-1">
-                <button onClick={prevMonth} className="p-2 hover:bg-accent rounded-md transition-colors cursor-pointer">
-                  <ChevronLeft className="size-5" />
-                </button>
-                <button 
-                  onClick={() => setCurrentDate(new Date())}
-                  className="px-3 py-1 text-xs font-bold hover:bg-accent rounded-md transition-colors cursor-pointer"
-                >
-                  Hoy
-                </button>
-                <button onClick={nextMonth} className="p-2 hover:bg-accent rounded-md transition-colors cursor-pointer">
-                  <ChevronRight className="size-5" />
-                </button>
+          <div className="medical-card p-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-4">
+              <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                <CalendarIcon className="size-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">{monthName}</h2>
+                <p className="text-sm text-slate-500 capitalize">{year}</p>
               </div>
             </div>
             
-            <div className="grid grid-cols-7 bg-muted/10">
-              {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-                <div key={day} className="py-2 text-center text-xs font-bold text-muted-foreground uppercase border-b border-r border-muted/20">
-                  {day}
-                </div>
-              ))}
-            </div>
-            
-            <div className="grid grid-cols-7 border-l border-t border-muted/10">
-              {renderCalendar()}
+            <div className="flex items-center gap-2 self-end md:self-auto bg-slate-100 p-1 rounded-xl">
+              <button 
+                onClick={prevMonth}
+                className="p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all cursor-pointer"
+              >
+                <ChevronLeft className="size-5" />
+              </button>
+              <button
+                onClick={() => setCurrentDate(new Date())}
+                className="px-4 py-2 text-sm font-bold hover:bg-white hover:shadow-sm rounded-lg transition-all cursor-pointer"
+              >
+                Hoy
+              </button>
+              <button 
+                onClick={nextMonth}
+                className="p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all cursor-pointer"
+              >
+                <ChevronRight className="size-5" />
+              </button>
             </div>
           </div>
-        ) : (
-          <div className="divide-y">
-            {loading ? (
-              <div className="p-12 text-center text-muted-foreground">Cargando citas...</div>
-            ) : appointments.length === 0 ? (
-              <div className="p-12 text-center">
-                <CalendarIcon className="size-12 mx-auto text-muted-foreground/20 mb-4" />
-                <h3 className="text-lg font-bold">No hay citas programadas</h3>
-                <p className="text-muted-foreground">Haga clic en 'Nueva Cita' para comenzar.</p>
+
+          <div className="grid grid-cols-7 mb-2">
+            {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+              <div key={day} className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 py-2">
+                {day}
               </div>
-            ) : (
-              appointments.map(app => (
-                <div key={app.id} className="p-4 flex items-center justify-between hover:bg-accent/5 transition-colors group">
-                  <div className="flex items-center gap-4">
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-7 border-l border-t border-border rounded-xl overflow-hidden shadow-sm">
+            {renderCalendar()}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {loading ? (
+            <div className="medical-card p-12 text-center text-slate-400">
+              <Loader2 className="size-8 animate-spin mx-auto mb-4" />
+              Cargando citas...
+            </div>
+          ) : appointments.length === 0 ? (
+            <div className="medical-card p-12 text-center">
+              <CalendarIcon className="size-12 mx-auto text-slate-200 mb-4" />
+              <h3 className="text-lg font-bold">No hay citas programadas</h3>
+              <p className="text-slate-400">Haga clic en 'Nueva Cita' para comenzar.</p>
+            </div>
+          ) : (
+            appointments.map(app => (
+              <div
+                key={app.id}
+                onClick={() => {
+                  setEditingAppointment(app);
+                  setIsAppointmentFormOpen(true);
+                }}
+                className="medical-card p-4 flex items-center justify-between group cursor-pointer border-none"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="size-14 rounded-2xl bg-slate-100 overflow-hidden flex items-center justify-center">
+                      <User className="size-8 text-slate-300" />
+                    </div>
                     <div className={cn(
-                      "size-10 rounded-full flex items-center justify-center",
-                      app.status === 'confirmed' ? "bg-emerald-500/10 text-emerald-400" :
-                      app.status === 'cancelled' ? "bg-destructive/10 text-destructive" :
-                      "bg-amber-500/10 text-amber-400"
-                    )}>
-                      <User className="size-5" />
-                    </div>
-                    <div>
-                      <p className="font-bold">{app.patients.first_name} {app.patients.last_name}</p>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                        <span className="flex items-center gap-1">
-                          <CalendarIcon className="size-3" />
-                          {new Date(app.start_time).toLocaleDateString()}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="size-3" />
-                          {new Date(app.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    </div>
+                      "absolute -bottom-1 -right-1 size-4 rounded-full border-2 border-white",
+                      app.status === 'confirmed' ? "bg-emerald-500" :
+                      app.status === 'cancelled' ? "bg-destructive" :
+                      app.status === 'completed' ? "bg-amber-500" :
+                      "bg-slate-400"
+                    )} />
                   </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <span className={cn(
-                      "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-                      app.status === 'confirmed' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
-                      app.status === 'cancelled' ? "bg-destructive/10 border-destructive/20 text-destructive" :
-                      "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                    )}>
-                      {app.status === 'confirmed' ? 'Confirmada' : 
-                       app.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
-                    </span>
-                    <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-all cursor-pointer">
-                      <MoreVertical className="size-4" />
-                    </button>
+                  <div>
+                    <p className="font-bold text-lg leading-tight">{app.patients.first_name} {app.patients.last_name}</p>
+                    <p className="text-sm text-slate-400">{app.reason || 'Consulta General'}</p>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        )}
+                
+                <div className="flex flex-col items-end gap-2">
+                  <span className="text-primary font-bold">
+                    {new Date(app.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <div className={cn(
+                    "px-3 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest",
+                    app.status === 'confirmed' ? "bg-emerald-100 text-emerald-600" :
+                    app.status === 'cancelled' ? "bg-red-100 text-red-600" :
+                    app.status === 'completed' ? "bg-slate-100 text-slate-500" :
+                    "bg-amber-100 text-amber-600"
+                  )}>
+                    {app.status === 'confirmed' ? 'Confirmada' : 
+                     app.status === 'cancelled' ? 'Cancelada' : 
+                     app.status === 'completed' ? 'Completada' : 'Pendiente'}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
       </div>
     </div>
   );

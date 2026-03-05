@@ -1,8 +1,14 @@
 {
+  "plugins": [
+    "stylelint-a11y"
+  ],
   "extends": [
     "stylelint-config-standard"
   ],
   "rules": {
+    "a11y/media-prefers-reduced-motion": true,
+    "a11y/no-outline-none": true,
+    "a11y/selector-pseudo-class-focus-is-valid": true,
     "at-rule-no-unknown": [
       true,
       {

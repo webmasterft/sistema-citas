@@ -43,7 +43,7 @@ export default function LoginPage() {
         <div className="relative z-10 max-w-md">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 bg-primary rounded-2xl shadow-lg shadow-primary/20">
-              <Stethoscope className="w-8 h-8 text-white" />
+              <Stethoscope className="w-8 h-8 text-primary-foreground" />
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               MedApp <span className="text-primary">Ecuador</span>
@@ -78,7 +78,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="lg:hidden flex flex-col items-center mb-12">
              <div className="p-4 bg-primary rounded-2xl shadow-lg shadow-primary/20 mb-4">
-              <Stethoscope className="w-10 h-10 text-white" />
+              <Stethoscope className="w-10 h-10 text-primary-foreground" />
             </div>
             <h1 className="text-2xl font-bold text-foreground">MedApp Ecuador</h1>
           </div>

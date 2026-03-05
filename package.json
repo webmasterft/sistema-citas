@@ -9,8 +9,9 @@
     "lint": "next lint && stylelint \"src/**/*.css\" && prettier --check .",
     "format": "prettier --write .",
     "lint:fix": "next lint --fix && stylelint \"src/**/*.css\" --fix && prettier --write .",
-    "audit:a11y": "pa11y http://localhost:3000",
-    "audit:perf": "lighthouse http://localhost:3000 --only-categories=performance,accessibility,best-practices,seo --chrome-flags=\"--headless\""
+    "audit:a11y": "pa11y http://localhost:3000 --standard WCAG2AA --reporter json > a11y-report.json",
+    "audit:perf": "lighthouse http://localhost:3000 --output json --output-path ./report.json --only-categories=performance,accessibility,best-practices,seo --chrome-flags=\"--headless\"",
+    "audit:all": "npm run audit:a11y && npm run audit:perf"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -38,6 +39,7 @@
     "pa11y": "^9.1.1",
     "prettier": "^3.8.1",
     "stylelint": "^17.4.0",
+    "stylelint-a11y": "^1.2.3",
     "stylelint-config-standard": "^40.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"

@@ -392,6 +392,12 @@ export type Database = {
           ruc: string | null
           signature_p12_url: string | null
           specialty: string | null
+          avatar_url: string | null
+          phone: string | null
+          address: string | null
+          bio: string | null
+          birth_date: string | null
+          experience_years: number | null
         }
         Insert: {
           created_at?: string
@@ -403,6 +409,12 @@ export type Database = {
           ruc?: string | null
           signature_p12_url?: string | null
           specialty?: string | null
+          avatar_url?: string | null
+          phone?: string | null
+          address?: string | null
+          bio?: string | null
+          birth_date?: string | null
+          experience_years?: number | null
         }
         Update: {
           created_at?: string
@@ -414,6 +426,12 @@ export type Database = {
           ruc?: string | null
           signature_p12_url?: string | null
           specialty?: string | null
+          avatar_url?: string | null
+          phone?: string | null
+          address?: string | null
+          bio?: string | null
+          birth_date?: string | null
+          experience_years?: number | null
         }
         Relationships: [
           {
