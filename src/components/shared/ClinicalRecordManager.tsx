@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Tables } from "@/types/database";
-import { Plus, ClipboardList, Clock, User, X } from "lucide-react";
+import { Plus, ClipboardList, Clock, User, X, Printer, Mail, FileText } from "lucide-react";
 import { ClinicalRecordForm } from "./ClinicalRecordForm";
 
 interface ClinicalRecordManagerProps {
@@ -17,22 +17,106 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const fetchRecords = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("clinical_history")
-      .select("*")
-      .eq("patient_id", patient.id)
-      .order("created_at", { ascending: false });
-    
-    if (!error && data) {
-      setRecords(data);
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("clinical_history")
+        .select("*")
+        .eq("patient_id", patient.id)
+        .order("created_at", { ascending: false });
+      
+      if (!error && data) {
+        setRecords(data as any);
+      } else if (error) {
+        console.error("Supabase Error:", error);
+      }
+    } catch (err) {
+      console.error("Error fetching records:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [patient.id]);
 
   useEffect(() => {
     fetchRecords();
   }, [fetchRecords]);
+
+  const handlePrint = (record: any) => {
+    const printContent = document.getElementById(`print-prescription-${record.id}`);
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const styles = Array.from(document.styleSheets)
+      .map(styleSheet => {
+        try {
+          return Array.from(styleSheet.cssRules).map(rule => rule.cssText).join('');
+        } catch (e) {
+          return '';
+        }
+      })
+      .join('');
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Receta Médica - ${patient.first_name} ${patient.last_name}</title>
+          <style>
+            ${styles}
+            @media print {
+              body { padding: 40px; }
+              .no-print { display: none !important; }
+            }
+            .prescription-header { border-bottom: 2px solid #2e74ac; margin-bottom: 30px; padding-bottom: 20px; }
+            .prescription-body { min-height: 300px; font-family: monospace; font-size: 16px; line-height: 1.6; border: 1px solid #eee; padding: 20px; }
+            .prescription-footer { margin-top: 50px; border-top: 1px solid #eee; pt-10; text-align: center; }
+            .signature-line { margin: 50px auto 10px; border-top: 1px solid #000; width: 250px; }
+          </style>
+        </head>
+        <body onload="window.print(); window.close();">
+          <div class="prescription-header">
+            <div style="display: flex; justify-between; align-items: start;">
+              <div>
+                <h1 style="color: #2e74ac; margin: 0; font-size: 24px;">RECETA MÉDICA</h1>
+                <p style="margin: 5px 0; color: #666;">MedApp Ecuador - Gestión Clínica Digital</p>
+              </div>
+              <div style="text-align: right; color: #444; font-size: 12px;">
+                <p style="margin: 0;"><strong>Fecha:</strong> ${new Date(record.created_at).toLocaleDateString()}</p>
+                <p style="margin: 0;"><strong>Historia:</strong> ${patient.id_number}</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+              <h4 style="color: #2e74ac; border-bottom: 1px solid #eee; margin-bottom: 10px; font-size: 14px;">DATOS DEL PACIENTE</h4>
+              <p style="margin: 0;"><strong>Nombre:</strong> ${patient.first_name} ${patient.last_name}</p>
+              <p style="margin: 0;"><strong>Edad:</strong> ${patient.birth_date ? new Date().getFullYear() - new Date(patient.birth_date).getFullYear() : '---'} años</p>
+            </div>
+            <div style="text-align: right;">
+              <h4 style="color: #2e74ac; border-bottom: 1px solid #eee; margin-bottom: 10px; font-size: 14px;">DRA / DR</h4>
+              <p style="margin: 0;"><strong>Profesional:</strong> ${record.doctors_directory?.full_name || 'Servicios Médicos'}</p>
+              <p style="margin: 0;"><strong>Especialidad:</strong> ${record.doctors_directory?.specialty || 'General'}</p>
+            </div>
+          </div>
+
+          <div class="prescription-body">
+            <p style="font-weight: bold; margin-bottom: 15px; color: #2e74ac;">Rx / Prescripción:</p>
+            <div style="white-space: pre-wrap;">${record.prescription}</div>
+          </div>
+
+          <div class="prescription-footer">
+            <div class="signature-line"></div>
+            <p style="margin: 0; font-weight: bold;">Firma y Sello</p>
+            <p style="margin: 0; font-size: 11px; color: #888;">${record.doctors_directory?.phone || ''} | ${record.doctors_directory?.address || ''}</p>
+            <p style="margin-top: 20px; font-size: 10px; color: #aaa;">Documento emitido vía MedApp - Verificación: ${crypto.randomUUID().split('-')[0]}</p>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40 backdrop-blur-sm">
@@ -47,7 +131,7 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
               <p className="text-sm text-muted-foreground">ID: {patient.id_number} | Historia Clínica</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-accent rounded-full transition-colors" aria-label="Cerrar">
+          <button onClick={onClose} className="p-2 hover:bg-accent rounded-full transition-colors cursor-pointer" aria-label="Cerrar">
             <X className="size-6" />
           </button>
         </header>
@@ -60,7 +144,7 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
             </h3>
             <button 
               onClick={() => setIsFormOpen(true)}
-              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 shadow-sm cursor-pointer"
             >
               <Plus className="size-4" />
               Nueva Evolución (SOAP)
@@ -84,7 +168,7 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
                 <p className="text-muted-foreground">No hay registros previos para este paciente.</p>
               </div>
             ) : (
-              records.map((record) => (
+              records.map((record: any) => (
                 <article key={record.id} className="rounded-xl border bg-card p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors" />
                   <div className="flex items-center justify-between mb-4">
@@ -123,6 +207,37 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
                       </div>
                     </div>
                   </div>
+
+                  {record.prescription && (
+                    <div id={`print-prescription-${record.id}`} className="mt-6 p-4 rounded-lg bg-primary/5 border border-primary/20 relative">
+                      <div className="flex items-center justify-between mb-2 no-print">
+                        <h5 className="text-xs font-bold uppercase text-primary flex items-center gap-2">
+                          <FileText className="size-4" />
+                          Receta / Prescripción Médica
+                        </h5>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handlePrint(record);
+                            }} 
+                            className="p-1.5 hover:bg-primary/20 rounded text-primary transition-colors cursor-pointer"
+                            title="Imprimir Receta"
+                          >
+                            <Printer className="size-4" />
+                          </button>
+                          <button 
+                            className="p-1.5 hover:bg-primary/20 rounded text-primary transition-colors cursor-pointer"
+                            title="Enviar por Correo"
+                            onClick={() => alert(`Funcionalidad en desarrollo: Enviando receta a ${patient.email || 'correo no registrado'}`)}
+                          >
+                            <Mail className="size-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-sm font-mono whitespace-pre-wrap">{record.prescription}</p>
+                    </div>
+                  )}
                 </article>
               ))
             )}

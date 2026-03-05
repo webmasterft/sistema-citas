@@ -52,7 +52,7 @@ export default function LoginPage() {
           
           <h2 className="text-4xl font-extrabold text-foreground mb-6 leading-tight">
             Gestión Médica de <br /> 
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-blue-600">
               Siguiente Generación
             </span>
           </h2>
@@ -132,7 +132,7 @@ export default function LoginPage() {
 
             <button
               disabled={loading}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8 w-full shadow-lg shadow-primary/20"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8 w-full shadow-lg shadow-primary/20 cursor-pointer"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -143,9 +143,9 @@ export default function LoginPage() {
 
           <p className="px-8 text-center text-sm text-muted-foreground">
             Al continuar, acepta nuestros{" "}
-            <a className="underline underline-offset-4 hover:text-primary" href="#">Términos de Servicio</a>{" "}
+            <a className="underline underline-offset-4 hover:text-primary cursor-pointer" href="#">Términos de Servicio</a>{" "}
             y{" "}
-            <a className="underline underline-offset-4 hover:text-primary" href="#">Política de Privacidad</a>.
+            <a className="underline underline-offset-4 hover:text-primary cursor-pointer" href="#">Política de Privacidad</a>.
           </p>
         </div>
       </div>

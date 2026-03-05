@@ -3,14 +3,18 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Tables } from "@/types/database";
-import { Plus, Users, Pencil, History, Search } from "lucide-react";
+import { Plus, Users, Pencil, History, Search, Trash2 } from "lucide-react";
 import { PatientForm } from "./PatientForm";
 import { ClinicalRecordManager } from "./ClinicalRecordManager";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export function PatientManager() {
+  const { user, role, loading: authLoading } = useAuth();
+  const isDoctor = role === "doctor";
   const [patients, setPatients] = useState<Tables<"patients">[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<Tables<"patients"> | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPatientForHistory, setSelectedPatientForHistory] = useState<Tables<"patients"> | null>(null);
   const [showSlowNetwork, setShowSlowNetwork] = useState(false);
@@ -33,6 +37,10 @@ export function PatientManager() {
         .select("*")
         .order("last_name");
       
+      if (isDoctor && user) {
+        query = query.eq("doctor_id", user.id);
+      }
+      
       if (searchQuery) {
         query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,id_number.ilike.%${searchQuery}%`);
       }
@@ -47,11 +55,25 @@ export function PatientManager() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, isDoctor, user]);
 
   useEffect(() => {
-    fetchPatients();
-  }, [fetchPatients]);
+    if (!authLoading && user) {
+      fetchPatients();
+    }
+  }, [fetchPatients, user, authLoading]);
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`¿Estás seguro de eliminar al paciente "${name}"?`)) return;
+    try {
+      const { error } = await supabase.from("patients").delete().eq("id", id);
+      if (error) throw error;
+      fetchPatients();
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("No se pudo eliminar al paciente.");
+    }
+  };
 
   return (
     <section className="space-y-6">
@@ -61,8 +83,11 @@ export function PatientManager() {
           <p className="text-muted-foreground">Listado general de pacientes y acceso a historias clínicas.</p>
         </div>
         <button 
-          onClick={() => setIsFormOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105"
+          onClick={() => {
+            setEditingPatient(null);
+            setIsFormOpen(true);
+          }}
+          className="flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105 cursor-pointer"
         >
           <Plus className="size-4" />
           Nuevo Paciente
@@ -82,8 +107,12 @@ export function PatientManager() {
 
       {isFormOpen && (
         <PatientForm 
-          onClose={() => setIsFormOpen(false)} 
+          onClose={() => {
+            setIsFormOpen(false);
+            setEditingPatient(null);
+          }} 
           onSuccess={fetchPatients} 
+          initialData={editingPatient}
         />
       )}
 
@@ -102,25 +131,9 @@ export function PatientManager() {
             <tbody className="divide-y">
               {loading && patients.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12">
-                    <div className="flex flex-col items-center justify-center gap-4">
-                      <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin mb-2"></div>
-                      <p className="text-muted-foreground">Cargando pacientes...</p>
-                      {showSlowNetwork && (
-                        <div className="mt-4 p-4 border border-destructive/20 bg-destructive/10 rounded-lg max-w-md text-sm text-center">
-                          <p className="font-semibold text-destructive mb-2">Parece que la conexión se atascó.</p>
-                          <button 
-                            onClick={() => {
-                              localStorage.clear();
-                              window.location.reload();
-                            }}
-                            className="px-4 py-2 bg-destructive text-destructive-foreground font-medium rounded-md hover:bg-destructive/90 transition-colors mt-2"
-                          >
-                            Forzar Limpieza y Recargar
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Cargando pacientes...</p>
                   </td>
                 </tr>
               ) : patients.length === 0 ? (
@@ -151,15 +164,31 @@ export function PatientManager() {
                         <div className="flex justify-end gap-1">
                           <button 
                             onClick={() => setSelectedPatientForHistory(patient)}
-                            className="p-2 text-primary hover:bg-primary/10 rounded-md flex items-center gap-1 text-xs font-medium"
+                            className="p-2 text-primary hover:bg-primary/10 rounded-md flex items-center gap-1 text-xs font-medium cursor-pointer"
                             title="Ver Historia Clínica"
                           >
                             <History className="size-4" />
                             <span className="hidden sm:inline">Historia</span>
                           </button>
-                          <button className="p-2 text-muted-foreground hover:text-foreground" aria-label="Editar">
+                          <button 
+                            onClick={() => {
+                              setEditingPatient(patient);
+                              setIsFormOpen(true);
+                            }}
+                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer" 
+                            aria-label="Editar"
+                          >
                             <Pencil className="size-4" />
                           </button>
+                          {(role === "admin" || role === "webmaster") && (
+                            <button 
+                              onClick={() => handleDelete(patient.id, `${patient.first_name} ${patient.last_name}`)}
+                              className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer" 
+                              aria-label="Eliminar"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -22,6 +22,7 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
     const subjective = formData.get("subjective") as string;
     const objective = formData.get("objective") as string;
     const plan = formData.get("plan") as string;
+    const prescription = formData.get("prescription") as string;
     const internal_notes = formData.get("internal_notes") as string;
     const assessment_cie10 = formData.get("assessment_cie10") as string;
 
@@ -37,6 +38,7 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
         subjective,
         objective,
         plan,
+        prescription,
         internal_notes,
         assessment_cie10
       }]);
@@ -108,6 +110,20 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
               rows={3}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-primary shadow-inner font-medium"
               placeholder="Reposo absoluto, hidratación..."
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="prescription" className="text-xs font-bold uppercase tracking-tight text-primary flex items-center gap-1.5">
+              <Save className="size-3" />
+              Receta Médica / Prescripción (Aparecerá en el documento de impresión)
+            </label>
+            <textarea
+              id="prescription"
+              name="prescription"
+              rows={3}
+              className="w-full rounded-md border-2 border-primary/10 bg-primary/5 px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-primary shadow-inner font-mono"
+              placeholder="Ej: Paracetamol 500mg - 1 tableta cada 8 horas por 3 días..."
             />
           </div>
         </div>
