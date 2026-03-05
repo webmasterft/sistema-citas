@@ -6,11 +6,12 @@ import { DoctorManager } from "@/components/admin/DoctorManager";
 import { PatientManager } from "@/components/shared/PatientManager";
 import { AppointmentManager } from "@/components/shared/AppointmentManager";
 import { DoctorScheduleConfig } from "@/components/shared/DoctorScheduleConfig";
-import { Building2, Stethoscope, Users, Clock, CalendarClock } from "lucide-react";
+import { ProfileManager } from "@/components/shared/ProfileManager";
+import { Building2, Stethoscope, Users, Clock, CalendarClock, Settings } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useSearchParams, useRouter } from "next/navigation";
 
-type TabId = "institutions" | "doctors" | "patients" | "appointments" | "schedule";
+type TabId = "institutions" | "doctors" | "patients" | "appointments" | "schedule" | "configuracion";
 
 export default function Home() {
   const { role } = useAuth();
@@ -80,6 +81,10 @@ export default function Home() {
               Mi Horario
             </button>
           )}
+          <button onClick={() => handleTabChange("configuracion")} className={tabClass("configuracion")}>
+            <Settings className="size-4" />
+            Configuración
+          </button>
         </nav>
       </header>
 
@@ -88,6 +93,7 @@ export default function Home() {
       {activeTab === "patients" && <PatientManager />}
       {activeTab === "appointments" && <AppointmentManager />}
       {activeTab === "schedule" && isDoctor && <DoctorScheduleConfig />}
+      {activeTab === "configuracion" && <ProfileManager />}
     </div>
   );
 }

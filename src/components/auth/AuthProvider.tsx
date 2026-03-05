@@ -9,22 +9,27 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: string | null;
+  profile: any | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   role: null,
+  profile: null,
   loading: true,
   signOut: async () => {},
+  refreshProfile: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole]       = useState<string | null>(null);
+  const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const router   = useRouter();
   const pathname = usePathname();
@@ -47,38 +52,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }, 8000);
 
-    // Fetch role from `profiles` table
-    const fetchRole = async (userId: string): Promise<string | null> => {
+    // Fetch profile from `profiles` table
+    const fetchProfile = async (userId: string) => {
       try {
         const { data, error } = await supabase
           .from("profiles")
-          .select("role")
+          .select("*")
           .eq("id", userId)
           .maybeSingle();
         if (error) throw error;
-        return data?.role ?? null;
+        return data;
       } catch (err) {
-        console.error("AuthProvider fetchRole error:", err);
+        console.error("AuthProvider fetchProfile error:", err);
         return null;
       }
     };
 
-    // Apply a session to state (sets user, session and role atomically)
+    // Apply a session to state (sets user, session and profile atomically)
     const applySession = async (s: Session | null) => {
       if (!mounted) return;
       setSession(s);
       setUser(s?.user ?? null);
 
       if (s?.user) {
-        // Fast path: role in metadata (set at sign-up)
-        const metaRole = s.user.user_metadata?.role as string | undefined;
-        if (metaRole) setRole(metaRole);
-
-        // Authoritative path: always sync from DB
-        const dbRole = await fetchRole(s.user.id);
-        if (mounted && dbRole) setRole(dbRole);
+        // Authoritative path: sync profile from DB
+        const dbProfile = await fetchProfile(s.user.id);
+        if (mounted) {
+          setProfile(dbProfile);
+          if (dbProfile?.role) setRole(dbProfile.role);
+          else {
+            // Fallback to metadata if DB role is missing
+            const metaRole = s.user.user_metadata?.role as string | undefined;
+            if (metaRole) setRole(metaRole);
+          }
+        }
       } else {
         setRole(null);
+        setProfile(null);
       }
     };
 
@@ -129,8 +139,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshProfile = async () => {
+    if (user) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data) setProfile(data);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, profile, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

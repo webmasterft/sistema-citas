@@ -2,41 +2,60 @@
 
 import { createClient } from "@supabase/supabase-js";
 
+interface DoctorData {
+  email?: string;
+  password?: string;
+  fullName?: string;
+  avatarUrl?: string;
+  specialty?: string;
+  licenseNumber?: string;
+  phone?: string;
+  address?: string;
+  birthDate?: string;
+  experienceYears?: number;
+  ruc?: string;
+  institutionId?: string;
+}
+
 /**
  * Acción de servidor para crear una cuenta de médico de forma administrativa
- * Requiere SUPABASE_SERVICE_ROLE_KEY en el .env
  */
-export async function createDoctorAccount(email: string, password: string, fullName: string) {
+export async function createDoctorAccount(email: string, password: string, fullName: string, initialData: Partial<DoctorData> = {}) {
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!, // Llave maestra
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
   );
 
   try {
-    // 1. Crear el usuario en el sistema de Autenticación
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: fullName, role: 'doctor' }
+      user_metadata: { 
+        full_name: fullName, 
+        role: 'doctor',
+        avatar_url: initialData.avatarUrl 
+      }
     });
 
     if (authError) throw authError;
 
-    // 2. Crear su perfil en la tabla de profiles con rol médico
-    // Esto es vital para que el RLS le deje entrar
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .upsert({
         id: authData.user.id,
         full_name: fullName,
-        role: 'doctor'
+        role: 'doctor',
+        avatar_url: initialData.avatarUrl || null,
+        specialty: initialData.specialty || null,
+        license_number: initialData.licenseNumber || null,
+        phone: initialData.phone || null,
+        address: initialData.address || null,
+        birth_date: initialData.birthDate || null,
+        experience_years: initialData.experienceYears || null,
+        ruc: initialData.ruc || null,
+        institution_id: initialData.institutionId || null
       });
 
     if (profileError) throw profileError;
@@ -48,7 +67,7 @@ export async function createDoctorAccount(email: string, password: string, fullN
   }
 }
 
-export async function updateDoctorAccount(userId: string, data: { email?: string; password?: string; fullName?: string }) {
+export async function updateDoctorAccount(userId: string, data: DoctorData) {
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -59,18 +78,38 @@ export async function updateDoctorAccount(userId: string, data: { email?: string
     const updateData: any = {};
     if (data.email) updateData.email = data.email;
     if (data.password) updateData.password = data.password;
-    if (data.fullName) updateData.user_metadata = { full_name: data.fullName };
+    
+    updateData.user_metadata = { 
+      full_name: data.fullName,
+      avatar_url: data.avatarUrl,
+      role: 'doctor'
+    };
 
     const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, updateData);
     if (authError) throw authError;
 
-    if (data.fullName) {
-      const { error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .update({ full_name: data.fullName })
-        .eq("id", userId);
-      if (profileError) throw profileError;
-    }
+    const profileUpdates: any = {
+      full_name: data.fullName,
+      avatar_url: data.avatarUrl,
+      specialty: data.specialty,
+      license_number: data.licenseNumber,
+      phone: data.phone,
+      address: data.address,
+      birth_date: data.birthDate,
+      experience_years: data.experienceYears,
+      ruc: data.ruc,
+      institution_id: data.institutionId
+    };
+
+    // Remove undefined values
+    Object.keys(profileUpdates).forEach(key => profileUpdates[key] === undefined && delete profileUpdates[key]);
+
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .update(profileUpdates)
+      .eq("id", userId);
+    
+    if (profileError) throw profileError;
 
     return { success: true };
   } catch (error: any) {

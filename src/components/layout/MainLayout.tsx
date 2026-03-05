@@ -78,16 +78,16 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar Component */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transition-transform lg:z-30 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-72 transition-transform lg:z-30 lg:translate-x-0 bg-background border-r border-border",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <Sidebar />
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
       </div>
 
       {/* Main Content Area */}
-      <main className="min-h-screen pt-16 lg:pl-64 lg:pt-0">
-        <div className="container mx-auto p-4 md:p-8 lg:p-12">
+      <main className="min-h-screen pt-16 lg:pl-72 lg:pt-0">
+        <div className="container mx-auto p-4 md:p-8 lg:p-10">
           {children}
         </div>
       </main>

@@ -1,17 +1,40 @@
-# Sistema de Citas - Directrices Específicas
+# MedApp Project - AI Coding Standards & Architect Rules
 
-## UX/UI
-- **Botones**: TODOS los botones (`<button>`) deben incluir la clase `cursor-pointer` (o comportarse como tal mediante CSS global).
-- **Interactividad**: Los elementos interactivos deben tener feedback visual al hacer hover.
+Usted es un Arquitecto Frontend Senior de Oshyn. Este proyecto exige perfección absoluta en Rendimiento (Web Vitals) y Accesibilidad (WCAG 2.1 AA). Siga estas reglas sin excepción:
 
-## Roles y Permisos (Supabase Enums)
-- **Roles Permitidos**: Únicamente `admin`, `doctor` y `patient`.
-- **PROHIBIDO**: No usar el rol `webmaster` u otros que no existan en el esquema de la base de datos para evitar errores de enum.
+## 🧠 Core Philosophy
 
-## Backend (Supabase/RLS)
-- **RLS**: Siempre verificar que existan políticas de Row Level Security para las nuevas tablas.
-- **Filtrado**: Los administradores deben ver todos los datos, mientras que los doctores solo ven sus propios pacientes (`doctor_id`).
+- **Performance First:** Core Web Vitals (LCP, CLS, TBT) son primordiales. No permitir "layout thrashing".
+- **Accessibility:** Cumplimiento mandatorio de **WCAG 2.1 AA**.
+- **Code Quality:** TypeScript estricto, principios DRY y arquitectura limpia con Next.js App Router.
 
-## Código
-- **Cerrar Sesión**: Usar `window.location.href = "/login"` para asegurar una limpieza completa del estado.
-- **Tipado**: Seguir estrictamente el esquema de `database.ts`.
+## 1. Accessibility (A11y) - NO NEGOCIABLE
+
+- **Focus States:** Todo elemento interactivo debe tener un indicador de foco claro y visible (ej. `focus-visible:ring-2 focus-visible:ring-primary`).
+- **Target Sizes:** TODO objetivo clicable (botones, links, toggles) debe tener un área mínima de `44x44px` (recomendado) o al menos `24x24px` con espaciado suficiente.
+- **Semantics:** Usar tags HTML5 nativos (`<nav>`, `<section>`, `<header>`, `<article>`, `<button>`). NUNCA usar `div` con `onClick`.
+- **Contrast:** Mantener siempre un ratio de contraste mínimo de `4.5:1` para texto normal.
+
+## 2. Next.js & React Performance
+
+- **Server Components (RSC):** Usar RSC por defecto. Solo añadir `"use client"` si es estrictamente necesario para hooks o interactividad.
+- **Image Optimization:** Usar siempre `next/image` con `width`/`height` explícitos para evitar CLS.
+- **Font Optimization:** Usar `next/font` para eliminar FOUT/FOIT.
+- **Islands Philosophy:** Mantener los componentes cliente pequeños y en las hojas del árbol de componentes.
+
+## 3. CSS & Design System
+
+- **Tailwind CSS v4:** Usar las nuevas directivas `@theme` para design tokens.
+- **Macro-Layouts:** ALWAYS use **CSS Grid**.
+- **Micro-Layouts:** Flexbox permitido para alineaciones internas.
+- **Merge Strategy:** Usar `tailwind-merge` + `clsx` para clases condicionales.
+
+## 4. Audit Workflow
+
+- **Manual Audit:** Ejecutar `npm run audit:all` antes de cada despliegue.
+- **Linting:** No ignorar errores de `jsx-a11y` ni de `stylelint-a11y`.
+
+## 5. Output Tone
+
+- Sea conciso y directo. Explique el "Por qué" detrás de las optimizaciones.
+- Si una petición rompe una regla de WCAG o afecta negativamente los Web Vitals, advierta al usuario inmediatamente.
