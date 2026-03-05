@@ -14,13 +14,21 @@ export function InstitutionManager() {
   const [showSlowNetwork, setShowSlowNetwork] = useState(false);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer1: NodeJS.Timeout;
+    let timer2: NodeJS.Timeout;
     if (loading) {
-      timer = setTimeout(() => setShowSlowNetwork(true), 5000);
+      timer1 = setTimeout(() => setShowSlowNetwork(true), 4000);
+      timer2 = setTimeout(() => {
+        setLoading(false);
+        console.warn("InstitutionManager: Loading failsafe triggered.");
+      }, 10000);
     } else {
       setShowSlowNetwork(false);
     }
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [loading]);
 
   const fetchInstitutions = useCallback(async () => {

@@ -20,13 +20,27 @@ export function PatientManager() {
   const [showSlowNetwork, setShowSlowNetwork] = useState(false);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer1: NodeJS.Timeout;
+    let timer2: NodeJS.Timeout;
+    
     if (loading) {
-      timer = setTimeout(() => setShowSlowNetwork(true), 5000);
+      // Mostrar advertencia de red lenta después de 4 segundos
+      timer1 = setTimeout(() => setShowSlowNetwork(true), 4000);
+      
+      // Failsafe absoluto: abortar el estado de carga después de 10 segundos
+      // Esto previene que la aplicación se "congele" para siempre
+      timer2 = setTimeout(() => {
+        setLoading(false);
+        console.warn("PatientManager: Loading failsafe triggered. Request took too long.");
+      }, 10000);
     } else {
       setShowSlowNetwork(false);
     }
-    return () => clearTimeout(timer);
+    
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [loading]);
 
   const fetchPatients = useCallback(async () => {
@@ -58,9 +72,14 @@ export function PatientManager() {
   }, [searchQuery, isDoctor, user]);
 
   useEffect(() => {
-    if (!authLoading && user) {
-      fetchPatients();
+    if (authLoading) return;
+    
+    if (!user) {
+      setLoading(false);
+      return;
     }
+    
+    fetchPatients();
   }, [fetchPatients, user, authLoading]);
 
   const handleDelete = async (id: string, name: string) => {

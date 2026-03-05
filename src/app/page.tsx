@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { InstitutionManager } from "@/components/admin/InstitutionManager";
 import { DoctorManager } from "@/components/admin/DoctorManager";
 import { PatientManager } from "@/components/shared/PatientManager";
+import { AppointmentManager } from "@/components/shared/AppointmentManager";
 import { Building2, Stethoscope, Users, Clock } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -96,13 +97,7 @@ export default function Home() {
       {activeTab === "institutions" && isAdmin && <InstitutionManager />}
       {activeTab === "doctors" && isAdmin && <DoctorManager />}
       {activeTab === "patients" && <PatientManager />}
-      {activeTab === "appointments" && (
-        <div className="p-12 text-center rounded-2xl border-2 border-dashed border-muted">
-           <Clock className="size-12 mx-auto text-muted-foreground/20 mb-4" />
-           <h3 className="text-lg font-bold">Módulo de Citas</h3>
-           <p className="text-muted-foreground">Próximamente: Calendario de citas y gestión de turnos.</p>
-        </div>
-      )}
+      {activeTab === "appointments" && <AppointmentManager />}
     </div>
   );
 }

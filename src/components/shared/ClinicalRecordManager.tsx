@@ -15,6 +15,25 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
   const [records, setRecords] = useState<Tables<"clinical_history">[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showSlowNetwork, setShowSlowNetwork] = useState(false);
+
+  useEffect(() => {
+    let timer1: NodeJS.Timeout;
+    let timer2: NodeJS.Timeout;
+    if (loading) {
+      timer1 = setTimeout(() => setShowSlowNetwork(true), 4000);
+      timer2 = setTimeout(() => {
+        setLoading(false);
+        console.warn("ClinicalRecordManager: Loading failsafe triggered.");
+      }, 10000);
+    } else {
+      setShowSlowNetwork(false);
+    }
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [loading]);
 
   const fetchRecords = useCallback(async () => {
     try {
@@ -159,10 +178,16 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
             />
           )}
 
-          <div className="space-y-6">
-            {loading && records.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground italic">Cargando historial...</div>
-            ) : records.length === 0 ? (
+          <div className="flex-1 overflow-y-auto p-6 bg-muted/10 space-y-6">
+        {loading && records.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-12">
+            <div className="size-10 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4 shadow-md"></div>
+            <p className="text-muted-foreground font-medium animate-pulse">Cargando historial clínico...</p>
+            {showSlowNetwork && (
+              <p className="mt-2 text-sm text-amber-500">La conexión está tardando más de lo esperado...</p>
+            )}
+          </div>
+        ) : records.length === 0 ? (
               <div className="rounded-xl border border-dashed p-12 text-center bg-muted/20">
                 <Clock className="mx-auto size-12 text-muted-foreground/30 mb-4" />
                 <p className="text-muted-foreground">No hay registros previos para este paciente.</p>
