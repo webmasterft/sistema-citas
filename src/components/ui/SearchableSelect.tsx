@@ -74,15 +74,15 @@ export function SearchableSelect({
           console.log("SearchableSelect: click on Trigger");
           setIsOpen(!isOpen);
         }}
-        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+        className="flex h-[42px] w-full items-center justify-between rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm ring-offset-background placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-colors"
       >
         <div className="flex flex-col items-start truncate overflow-hidden pointer-events-none">
-          <span className={selectedOption ? "text-foreground font-medium" : "text-muted-foreground"}>
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
-          {selectedOption?.subLabel && (
-            <span className="text-[10px] text-muted-foreground leading-none">{selectedOption.subLabel}</span>
-          )}
+        <span className={selectedOption ? "text-slate-800 font-medium" : "text-slate-400"}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        {selectedOption?.subLabel && (
+          <span className="text-[10px] text-slate-500 leading-none">{selectedOption.subLabel}</span>
+        )}
         </div>
         <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
@@ -93,7 +93,7 @@ export function SearchableSelect({
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <input
               ref={inputRef}
-              className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+              className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-slate-400 text-slate-800"
               placeholder={searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}

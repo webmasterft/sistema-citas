@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { getDoctorsAndAvatars } from "@/app/actions/doctor-actions";
 import { Tables } from "@/types/database";
 import { Plus, Stethoscope, Pencil, Trash2, Building2 } from "lucide-react";
 import { DoctorForm } from "./DoctorForm";
@@ -36,19 +37,17 @@ export function DoctorManager() {
     try {
       setLoading(true);
       
-      // Fetch doctors from the new directory table
-      const { data: doctorsData, error: doctorsError } = await (supabase
-        .from("doctors_directory" as any)
-        .select("*")
-        .order("full_name") as any);
+      const doctorsResult = await getDoctorsAndAvatars();
 
       // Fetch institutions for mapping labels
       const { data: instData } = await supabase
         .from("institutions")
         .select("id, name");
 
-      if (!doctorsError && doctorsData) {
-        setDoctors(doctorsData as any);
+      if (doctorsResult.success && doctorsResult.data) {
+        setDoctors(doctorsResult.data as any);
+      } else {
+        console.error("Fetch doctors error via server action:", doctorsResult.error);
       }
 
       if (instData) {

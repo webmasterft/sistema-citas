@@ -32,15 +32,15 @@ export const DatePicker = ({
   const CustomInput = forwardRef<HTMLButtonElement, any>(({ value, onClick }, ref) => (
     <button
       type="button"
-      className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${className}`}
+      className={`flex h-[42px] w-full items-center justify-between rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm ring-offset-background placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-colors ${className}`}
       onClick={onClick}
       ref={ref}
       id={id}
     >
-      <span className={value ? "text-foreground" : "text-muted-foreground"}>
+      <span className={value ? "text-slate-800" : "text-slate-400"}>
         {value || placeholderText}
       </span>
-      <CalendarDays className="h-4 w-4 opacity-50" />
+      <CalendarDays className="h-4 w-4 opacity-50 text-slate-500" />
     </button>
   ));
 
@@ -57,6 +57,11 @@ export const DatePicker = ({
         maxDate={maxDate}
         placeholderText={placeholderText}
         required={required}
+        showMonthDropdown
+        showYearDropdown
+        dropdownMode="select"
+        scrollableYearDropdown
+        yearDropdownItemNumber={100}
         customInput={<CustomInput />}
         popperPlacement="bottom-start"
         popperClassName="z-[100]"
