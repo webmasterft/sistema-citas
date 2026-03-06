@@ -11,6 +11,7 @@ import { twMerge } from "tailwind-merge";
 import { format } from "date-fns";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { createAppointment, updateAppointment } from "@/app/actions/appointment-actions";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -177,18 +178,17 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
     };
 
     try {
+      let result;
       if (initialData?.id) {
-        const { error: submitError } = await supabase
-          .from("appointments")
-          .update(payload)
-          .eq("id", initialData.id);
-        if (submitError) throw submitError;
+        result = await updateAppointment(initialData.id, payload);
       } else {
-        const { error: submitError } = await supabase
-          .from("appointments")
-          .insert([payload]);
-        if (submitError) throw submitError;
+        result = await createAppointment(payload);
       }
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
       onSuccess();
     } catch (err: any) {
       setError(err.message || "Ocurrió un error al guardar la cita.");

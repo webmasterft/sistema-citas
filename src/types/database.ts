@@ -84,6 +84,14 @@ export type Database = {
           plan: string | null
           prescription: string | null
           subjective: string | null
+          weight: number | null
+          height: number | null
+          temperature: number | null
+          heart_rate: number | null
+          respiratory_rate: number | null
+          blood_pressure_sys: number | null
+          blood_pressure_dia: number | null
+          oxygen_saturation: number | null
         }
         Insert: {
           assessment_cie10?: string | null
@@ -96,6 +104,14 @@ export type Database = {
           plan?: string | null
           prescription?: string | null
           subjective?: string | null
+          weight?: number | null
+          height?: number | null
+          temperature?: number | null
+          heart_rate?: number | null
+          respiratory_rate?: number | null
+          blood_pressure_sys?: number | null
+          blood_pressure_dia?: number | null
+          oxygen_saturation?: number | null
         }
         Update: {
           assessment_cie10?: string | null
@@ -108,6 +124,14 @@ export type Database = {
           plan?: string | null
           prescription?: string | null
           subjective?: string | null
+          weight?: number | null
+          height?: number | null
+          temperature?: number | null
+          heart_rate?: number | null
+          respiratory_rate?: number | null
+          blood_pressure_sys?: number | null
+          blood_pressure_dia?: number | null
+          oxygen_saturation?: number | null
         }
         Relationships: [
           {
@@ -339,6 +363,11 @@ export type Database = {
           second_last_name: string | null
           phone: string | null
           gender: string | null
+          physical_illnesses: string | null
+          allergies: string | null
+          family_history: string | null
+          surgical_history: string | null
+          medications: string | null
         }
         Insert: {
           address?: string | null
@@ -353,6 +382,11 @@ export type Database = {
           insurance_provider_id?: string | null
           last_name: string
           phone?: string | null
+          physical_illnesses?: string | null
+          allergies?: string | null
+          family_history?: string | null
+          surgical_history?: string | null
+          medications?: string | null
         }
         Update: {
           address?: string | null
@@ -370,6 +404,11 @@ export type Database = {
           second_last_name?: string | null
           phone?: string | null
           gender?: string | null
+          physical_illnesses?: string | null
+          allergies?: string | null
+          family_history?: string | null
+          surgical_history?: string | null
+          medications?: string | null
         }
         Relationships: [
           {

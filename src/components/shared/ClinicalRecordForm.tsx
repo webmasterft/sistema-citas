@@ -30,6 +30,16 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
     const internal_notes = formData.get("internal_notes") as string;
     const assessment_cie10 = formData.get("assessment_cie10") as string;
 
+    // Signos Vitales
+    const weight = formData.get("weight") ? parseFloat(formData.get("weight") as string) : null;
+    const height = formData.get("height") ? parseFloat(formData.get("height") as string) : null;
+    const temperature = formData.get("temperature") ? parseFloat(formData.get("temperature") as string) : null;
+    const heart_rate = formData.get("heart_rate") ? parseInt(formData.get("heart_rate") as string) : null;
+    const respiratory_rate = formData.get("respiratory_rate") ? parseInt(formData.get("respiratory_rate") as string) : null;
+    const blood_pressure_sys = formData.get("blood_pressure_sys") ? parseInt(formData.get("blood_pressure_sys") as string) : null;
+    const blood_pressure_dia = formData.get("blood_pressure_dia") ? parseInt(formData.get("blood_pressure_dia") as string) : null;
+    const oxygen_saturation = formData.get("oxygen_saturation") ? parseInt(formData.get("oxygen_saturation") as string) : null;
+
     if (!user) {
       setError("No hay sesión activa.");
       setLoading(false);
@@ -47,7 +57,15 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
         plan,
         prescription,
         internal_notes,
-        assessment_cie10
+        assessment_cie10,
+        weight,
+        height,
+        temperature,
+        heart_rate,
+        respiratory_rate,
+        blood_pressure_sys,
+        blood_pressure_dia,
+        oxygen_saturation
       }]);
 
     if (submitError) {
@@ -118,6 +136,51 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
               className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-primary shadow-inner font-medium"
               placeholder="Reposo absoluto, hidratación..."
             />
+          </div>
+
+          <div className="md:col-span-2 p-4 rounded-xl border-2 border-dashed border-primary/20 bg-primary/5">
+            <h5 className="text-sm font-bold text-primary mb-4 flex items-center gap-2">
+              <Plus className="size-4" />
+              Signos Vitales y Antropometría
+            </h5>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">Presión Art. (S/D)</label>
+                <div className="flex items-center gap-1">
+                  <input type="number" name="blood_pressure_sys" placeholder="120" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+                  <span className="text-muted-foreground">/</span>
+                  <input type="number" name="blood_pressure_dia" placeholder="80" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">FC (LPM)</label>
+                <input type="number" name="heart_rate" placeholder="72" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">FR (RPM)</label>
+                <input type="number" name="respiratory_rate" placeholder="18" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">Temp (°C)</label>
+                <input type="number" step="0.1" name="temperature" placeholder="36.5" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">SpO2 (%)</label>
+                <input type="number" name="oxygen_saturation" placeholder="98" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">Peso (kg)</label>
+                <input type="number" step="0.1" name="weight" placeholder="70.5" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">Talla (cm)</label>
+                <input type="number" name="height" placeholder="170" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">IMC (Auto)</label>
+                <input type="text" readOnly placeholder="---" className="w-full rounded border bg-muted/50 px-2 py-1 text-xs text-muted-foreground" />
+              </div>
+            </div>
           </div>
 
           <div className="md:col-span-2 space-y-4">
