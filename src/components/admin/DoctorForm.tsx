@@ -14,6 +14,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 import { DatePicker } from "@/components/ui/DatePicker";
+import ImageCropper from "@/components/ui/ImageCropper";
 
 interface DoctorFormProps {
   onClose: () => void;
@@ -36,6 +37,7 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>(initialData?.avatar_url || "");
+  const [selectedImageToCrop, setSelectedImageToCrop] = useState<string | null>(null);
 
   const filteredSpecialties = MEDICAL_SPECIALTIES.filter((s: string) => 
     s.toLowerCase().includes(specialtySearch.toLowerCase())
@@ -219,13 +221,29 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      setAvatarFile(file);
-                      setAvatarPreview(URL.createObjectURL(file));
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setSelectedImageToCrop(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                      e.target.value = '';
                     }
                   }} 
                 />
               </label>
             </div>
+
+            {selectedImageToCrop && (
+              <ImageCropper
+                imageSrc={selectedImageToCrop}
+                onCropComplete={(croppedFile) => {
+                  setAvatarFile(croppedFile);
+                  setAvatarPreview(URL.createObjectURL(croppedFile));
+                  setSelectedImageToCrop(null);
+                }}
+                onCancel={() => setSelectedImageToCrop(null)}
+              />
+            )}
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Foto de Perfil (Opcional)</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

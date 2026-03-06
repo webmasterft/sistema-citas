@@ -7,6 +7,7 @@ import { User, Camera, Loader2, CheckCircle2, AlertCircle, Save, Phone, MapPin, 
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { DatePicker } from "@/components/ui/DatePicker";
+import ImageCropper from "@/components/ui/ImageCropper";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -18,6 +19,7 @@ export function ProfileManager() {
   const [uploading, setUploading] = useState(false);
   const [uploadingSignature, setUploadingSignature] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [selectedImageToCrop, setSelectedImageToCrop] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -47,15 +49,32 @@ export function ProfileManager() {
     }
   }, [profile]);
 
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleAvatarSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImageToCrop(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    // Reset input value so same file can be selected again
+    e.target.value = '';
+  }
+
+  async function handleCropComplete(croppedFile: File) {
+    setSelectedImageToCrop(null);
+    await uploadAvatar(croppedFile);
+  }
+
+  async function uploadAvatar(file: File) {
     try {
-      const file = e.target.files?.[0];
-      if (!file || !user) return;
+      if (!user) return;
 
       setUploading(true);
       setMessage(null);
 
-      const fileExt = file.name.split('.').pop();
+      const fileExt = 'jpg'; // We standardized to jpg in getCroppedImg
       const fileName = `${user.id}-${Math.random()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
@@ -191,9 +210,17 @@ export function ProfileManager() {
               </div>
               <label className="absolute -bottom-2 -right-2 p-3 bg-primary text-white rounded-2xl shadow-lg cursor-pointer hover:scale-110 transition-transform active:scale-95 shadow-primary/20">
                 <Camera className="size-5" />
-                <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
+                <input type="file" className="hidden" accept="image/*" onChange={handleAvatarSelect} disabled={uploading} />
               </label>
             </div>
+
+            {selectedImageToCrop && (
+              <ImageCropper 
+                imageSrc={selectedImageToCrop}
+                onCropComplete={handleCropComplete}
+                onCancel={() => setSelectedImageToCrop(null)}
+              />
+            )}
             
             <div className="text-center">
               <h3 className="font-bold text-lg">{profile?.full_name || "Doctor"}</h3>
