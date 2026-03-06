@@ -242,7 +242,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
 
           <div className="md:col-span-2 border-t pt-4 mt-2">
             <h4 className="text-sm font-bold text-primary mb-4">Antecedentes Médicos</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="physical_illnesses" className="text-xs font-bold uppercase text-muted-foreground">Enfermedades Físicas / Crónicas</label>
                 <textarea
@@ -287,7 +287,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                   placeholder="Ej: Apendicectomía (2015)..."
                 />
               </div>
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2">
                 <label htmlFor="medications" className="text-xs font-bold uppercase text-muted-foreground">Medicación Actual</label>
                 <textarea
                   id="medications"

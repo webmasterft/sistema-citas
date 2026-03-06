@@ -230,66 +230,64 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="space-y-3">
-                <div className="p-3 rounded-lg bg-background border shadow-sm">
-                  <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-1">Enfermedades Físicas / Crónicas</h4>
-                  {isEditingHistory ? (
-                    <textarea 
-                      value={historyForm.physical_illnesses}
-                      onChange={(e) => setHistoryForm({...historyForm, physical_illnesses: e.target.value})}
-                      className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
-                      rows={2}
-                    />
-                  ) : (
-                    <p className="text-sm font-medium">{patient.physical_illnesses || "Ninguna registrada"}</p>
-                  )}
-                </div>
-                <div className="p-3 rounded-lg bg-background border-l-4 border-l-destructive shadow-sm">
-                  <h4 className="text-[10px] font-black uppercase text-destructive mb-1">Alergias</h4>
-                  {isEditingHistory ? (
-                    <textarea 
-                      value={historyForm.allergies}
-                      onChange={(e) => setHistoryForm({...historyForm, allergies: e.target.value})}
-                      className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
-                      rows={2}
-                    />
-                  ) : (
-                    <p className="text-sm font-bold text-destructive">{patient.allergies || "Ninguna conocida"}</p>
-                  )}
-                </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="p-3 rounded-lg bg-background border shadow-sm">
+                <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-1">Enfermedades Físicas / Crónicas</h4>
+                {isEditingHistory ? (
+                  <textarea 
+                    value={historyForm.physical_illnesses}
+                    onChange={(e) => setHistoryForm({...historyForm, physical_illnesses: e.target.value})}
+                    className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
+                    rows={2}
+                  />
+                ) : (
+                  <p className="text-sm font-medium">{patient.physical_illnesses || "Ninguna registrada"}</p>
+                )}
               </div>
 
-              <div className="space-y-3">
-                <div className="p-3 rounded-lg bg-background border shadow-sm">
-                  <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-1">Antecedentes Familiares</h4>
-                  {isEditingHistory ? (
-                    <textarea 
-                      value={historyForm.family_history}
-                      onChange={(e) => setHistoryForm({...historyForm, family_history: e.target.value})}
-                      className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
-                      rows={2}
-                    />
-                  ) : (
-                    <p className="text-sm">{patient.family_history || "No reportados"}</p>
-                  )}
-                </div>
-                <div className="p-3 rounded-lg bg-background border shadow-sm">
-                  <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-1">Antecedentes Quirúrgicos</h4>
-                  {isEditingHistory ? (
-                    <textarea 
-                      value={historyForm.surgical_history}
-                      onChange={(e) => setHistoryForm({...historyForm, surgical_history: e.target.value})}
-                      className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
-                      rows={2}
-                    />
-                  ) : (
-                    <p className="text-sm">{patient.surgical_history || "No reportados"}</p>
-                  )}
-                </div>
+              <div className="p-3 rounded-lg bg-background border-l-4 border-l-destructive shadow-sm">
+                <h4 className="text-[10px] font-black uppercase text-destructive mb-1">Alergias</h4>
+                {isEditingHistory ? (
+                  <textarea 
+                    value={historyForm.allergies}
+                    onChange={(e) => setHistoryForm({...historyForm, allergies: e.target.value})}
+                    className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
+                    rows={2}
+                  />
+                ) : (
+                  <p className="text-sm font-bold text-destructive">{patient.allergies || "Ninguna conocida"}</p>
+                )}
               </div>
 
-              <div className="p-3 rounded-lg bg-background border shadow-sm min-h-[120px]">
+              <div className="p-3 rounded-lg bg-background border shadow-sm">
+                <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-1">Antecedentes Familiares</h4>
+                {isEditingHistory ? (
+                  <textarea 
+                    value={historyForm.family_history}
+                    onChange={(e) => setHistoryForm({...historyForm, family_history: e.target.value})}
+                    className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
+                    rows={2}
+                  />
+                ) : (
+                  <p className="text-sm">{patient.family_history || "No reportados"}</p>
+                )}
+              </div>
+
+              <div className="p-3 rounded-lg bg-background border shadow-sm">
+                <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-1">Antecedentes Quirúrgicos</h4>
+                {isEditingHistory ? (
+                  <textarea 
+                    value={historyForm.surgical_history}
+                    onChange={(e) => setHistoryForm({...historyForm, surgical_history: e.target.value})}
+                    className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
+                    rows={2}
+                  />
+                ) : (
+                  <p className="text-sm">{patient.surgical_history || "No reportados"}</p>
+                )}
+              </div>
+
+              <div className="p-3 rounded-lg bg-background border shadow-sm">
                 <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-1">Medicación Actual</h4>
                 {isEditingHistory ? (
                   <textarea 
