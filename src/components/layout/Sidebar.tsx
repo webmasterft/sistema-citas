@@ -89,12 +89,20 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             />
           ) : (
             <div className="size-10 rounded-2xl bg-[#0F172A] flex items-center justify-center text-sm font-bold text-white shadow-sm">
-              {profile?.full_name?.[0].toUpperCase() || user?.email?.[0].toUpperCase()}
+              {(profile?.full_name?.split(" ")[0]?.[0] || user?.email?.[0] || "U").toUpperCase()}
             </div>
           )}
           <div className="flex-1 overflow-hidden">
             <p className="text-xs font-bold text-[#0F172A] truncate">
-              {profile?.full_name || `Dr. ${user?.email?.split('@')[0]}`}
+              {(() => {
+                if (profile?.full_name) {
+                  const parts = profile.full_name.split(" ");
+                  if (parts.length >= 3) return `${parts[0]} ${parts[2]}`;
+                  if (parts.length >= 2) return `${parts[0]} ${parts[1]}`;
+                  return parts[0];
+                }
+                return `Dr. ${user?.email?.split('@')[0]}`;
+              })()}
             </p>
             <p className="text-[10px] text-slate-400 font-medium truncate uppercase tracking-tighter">
               {profile?.specialty || "Médico Especialista"}

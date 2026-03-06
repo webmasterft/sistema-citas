@@ -76,7 +76,10 @@ export async function updateDoctorAccount(userId: string, data: DoctorData) {
 
   try {
     const updateData: any = {};
-    if (data.email) updateData.email = data.email;
+    if (data.email) {
+      updateData.email = data.email;
+      updateData.email_confirm = true;
+    }
     if (data.password) updateData.password = data.password;
     
     updateData.user_metadata = { 
@@ -115,5 +118,75 @@ export async function updateDoctorAccount(userId: string, data: DoctorData) {
   } catch (error: any) {
     console.error("Error actualizando cuenta de médico:", error);
     return { success: false, error: error.message };
+  }
+}
+
+export async function upsertDoctorDirectory(id: string | null, payload: any) {
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+
+  try {
+    if (id) {
+      console.log("Admin Server Action: Updating doctors_directory ID:", id);
+      const { data, error } = await supabaseAdmin
+        .from("doctors_directory" as any)
+        .update(payload)
+        .eq("id", id)
+        .select();
+        
+      if (error) throw error;
+      return { success: true, data };
+    } else {
+      console.log("Admin Server Action: Inserting new doctor to doctors_directory");
+      const { data, error } = await supabaseAdmin
+        .from("doctors_directory" as any)
+        .insert([payload])
+        .select();
+        
+      if (error) throw error;
+      return { success: true, data };
+    }
+  } catch (error: any) {
+    console.error("Error upserting doctors directory:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getDoctorsAndAvatars() {
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+
+  try {
+    const { data: doctorsData, error: doctorsError } = await supabaseAdmin
+      .from("doctors_directory" as any)
+      .select("*")
+      .order("full_name");
+      
+    if (doctorsError) throw doctorsError;
+
+    const { data: profilesData, error: profilesError } = await supabaseAdmin
+      .from("profiles")
+      .select("id, avatar_url");
+
+    if (profilesError) throw profilesError;
+
+    const doctorsWithAvatars = doctorsData.map((doc: any) => {
+      const profile = profilesData?.find((p: any) => p.id === doc.auth_user_id);
+      return {
+        ...doc,
+        avatar_url: profile?.avatar_url || null
+      };
+    });
+
+    return { success: true, data: doctorsWithAvatars };
+  } catch (err: any) {
+    console.error("Error fetching doctors and avatars:", err);
+    return { success: false, error: err.message };
   }
 }

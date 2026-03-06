@@ -7,7 +7,7 @@ import { X, Loader2, Stethoscope, Search, Check, ChevronDown, Lock, ShieldCheck,
 import { MEDICAL_SPECIALTIES } from "@/lib/constants";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { createDoctorAccount, updateDoctorAccount } from "@/app/actions/doctor-actions";
+import { createDoctorAccount, updateDoctorAccount, upsertDoctorDirectory } from "@/app/actions/doctor-actions";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -82,7 +82,7 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(filePath, avatarFile);
+          .upload(filePath, avatarFile, { upsert: true });
 
         if (uploadError) throw uploadError;
 
@@ -140,42 +140,64 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
         auth_user_id: authUserId
       };
 
-      const query = supabase.from("doctors_directory" as any);
+      console.log("DoctorForm: Submitting payload to doctors_directory via Server Action:", doctorPayload);
       
-      if (initialData?.id) {
-        const { error: submitError } = await (query
-          .update(doctorPayload)
-          .eq("id", initialData.id) as any);
-        if (submitError) throw submitError;
-      } else {
-        const { error: submitError } = await (query.insert([doctorPayload]) as any);
-        if (submitError) throw submitError;
+      const upsertResult = await upsertDoctorDirectory(initialData?.id || null, doctorPayload);
+      
+      if (!upsertResult.success) {
+        throw new Error(upsertResult.error || "Error al guardar en el directorio médico");
       }
+      
+      console.log("DoctorForm: Upsert successful:", upsertResult.data);
 
       onSuccess();
       onClose();
     } catch (err: any) {
+      console.error("DoctorForm: Caught error in handleSubmit:", err);
       setError(err.message || translateError(err));
     } finally {
       setLoading(false);
     }
   }
 
+  const existingNames = (initialData?.full_name || "").trim().split(/\s+/);
+  let defaultFn1 = "", defaultFn2 = "", defaultLn1 = "", defaultLn2 = "";
+  if (existingNames.length === 1) {
+    defaultFn1 = existingNames[0] || "";
+  } else if (existingNames.length === 2) {
+    defaultFn1 = existingNames[0];
+    defaultLn1 = existingNames[1];
+  } else if (existingNames.length === 3) {
+    defaultFn1 = existingNames[0];
+    defaultLn1 = existingNames[1];
+    defaultLn2 = existingNames[2];
+  } else if (existingNames.length >= 4) {
+    defaultFn1 = existingNames[0];
+    defaultLn2 = existingNames[existingNames.length - 1];
+    defaultLn1 = existingNames[existingNames.length - 2];
+    defaultFn2 = existingNames.slice(1, existingNames.length - 2).join(" ");
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-y-auto">
-      <article className="w-full max-w-2xl my-8 rounded-2xl bg-card p-8 shadow-2xl border border-primary/10 animate-in fade-in zoom-in duration-300">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h3 className="text-2xl font-bold tracking-tight">
-              {initialData ? "Editar Profesional" : "Registro de Profesional Médico"}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {initialData ? "Actualice los datos del profesional sanitario." : "Complete la ficha técnica para habilitar el acceso al sistema."}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-accent rounded-full transition-colors cursor-pointer" aria-label="Cerrar">
-            <X className="size-6" />
-          </button>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-md">
+      <div className="min-h-full flex items-center justify-center p-4 py-8">
+        <article className="relative w-full max-w-2xl bg-card rounded-2xl p-8 shadow-2xl border border-primary/10 animate-in fade-in zoom-in duration-300">
+        <button 
+          type="button"
+          onClick={onClose}
+          className="absolute right-6 top-6 rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+        >
+          <X className="size-5" />
+        </button>
+
+        <div className="mb-8 pr-8">
+          <h3 className="text-2xl font-bold flex items-center gap-2">
+            <Stethoscope className="size-6 text-primary" />
+            {initialData ? "Editar Médico" : "Nuevo Médico"}
+          </h3>
+          <p className="text-muted-foreground mt-1">
+            Ingrese la información completa del profesional de la salud.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -216,9 +238,9 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
                     <label className="text-sm font-semibold">Primer Nombre *</label>
                     <input 
                       name="first_name_1" 
-                      defaultValue={initialData?.full_name?.split(" ")[0]} 
+                      defaultValue={defaultFn1} 
                       required 
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
+                      className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400" 
                       placeholder="Ej: Fernando" 
                     />
                   </div>
@@ -226,8 +248,8 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
                     <label className="text-sm font-semibold">Segundo Nombre</label>
                     <input 
                       name="first_name_2" 
-                      defaultValue={initialData?.full_name?.split(" ")[1]} 
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
+                      defaultValue={defaultFn2} 
+                      className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400" 
                       placeholder="Ej: Javier" 
                     />
                   </div>
@@ -238,9 +260,9 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
                     <label className="text-sm font-semibold">Apellido Paterno *</label>
                     <input 
                       name="last_name_1" 
-                      defaultValue={initialData?.full_name?.split(" ")[2]} 
+                      defaultValue={defaultLn1} 
                       required 
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
+                      className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400" 
                       placeholder="Ej: Torres" 
                     />
                   </div>
@@ -248,15 +270,15 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
                     <label className="text-sm font-semibold">Apellido Materno</label>
                     <input 
                       name="last_name_2" 
-                      defaultValue={initialData?.full_name?.split(" ").slice(3).join(" ")} 
-                      className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
+                      defaultValue={defaultLn2} 
+                      className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400" 
                       placeholder="Ej: Espinosa" 
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Correo Electrónico (Usuario)</label>
-                  <input name="email" type="email" defaultValue={initialData?.email} required className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="doctor@medapp.ec" />
+                  <input name="email" type="email" defaultValue={initialData?.email} required className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400" placeholder="doctor@medapp.ec" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold flex items-center gap-1.5">
@@ -267,10 +289,10 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
                     name="password" 
                     type="password" 
                     required={!initialData} 
-                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
+                    className="w-full rounded-[6px] border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400" 
                     placeholder={initialData ? "Dejar en blanco para no cambiar" : "Min. 6 caracteres"} 
                   />
-                  <p className="text-[10px] text-muted-foreground italic">
+                  <p className="text-[10px] text-slate-500 italic mt-1">
                     {initialData 
                       ? "Use este campo solo si desea cambiar la clave del médico." 
                       : "Esta será la clave inicial para que el médico acceda al sistema."}
@@ -289,7 +311,7 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
                     <button
                       type="button"
                       onClick={() => setIsSpecialtyOpen(!isSpecialtyOpen)}
-                      className="flex h-10 w-full items-center justify-between rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 hover:bg-accent/50 transition-all outline-none cursor-pointer"
+                      className="flex h-[42px] w-full items-center justify-between rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary hover:bg-slate-100 transition-colors cursor-pointer text-slate-800"
                     >
                       <span className={selectedSpecialty ? "text-foreground" : "text-muted-foreground text-xs"}>
                         {selectedSpecialty || "Seleccione..."}
@@ -337,17 +359,17 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Número de Licencia / MSP</label>
-                  <input name="license_number" defaultValue={initialData?.license_number} required className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-mono" placeholder="REG-MSP-12345" />
+                  <input name="license_number" defaultValue={initialData?.license_number} required className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400 font-mono" placeholder="REG-MSP-12345" />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">RUC Personal / RISE</label>
-                  <input name="ruc" defaultValue={initialData?.ruc} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-mono" placeholder="1712345678001" />
+                  <input name="ruc" defaultValue={initialData?.ruc} className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400 font-mono" placeholder="1712345678001" />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Años de Experiencia</label>
-                  <input name="experience_years" type="number" min="0" defaultValue={initialData?.experience_years} required className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="Ej: 10" />
+                  <input name="experience_years" type="number" min="0" defaultValue={initialData?.experience_years} required className="w-full rounded-[6px] border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400" placeholder="Ej: 10" />
                 </div>
 
                 <div className="space-y-2">
@@ -368,11 +390,11 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Teléfono Celular</label>
-                  <input name="phone" defaultValue={initialData?.phone} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="099-XXX-XXXX" />
+                  <input name="phone" defaultValue={initialData?.phone} className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400" placeholder="099-XXX-XXXX" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Institución Principal</label>
-                  <select name="institution_id" defaultValue={initialData?.institution_id || ""} className="w-full h-10 rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer">
+                  <select name="institution_id" defaultValue={initialData?.institution_id || ""} className="w-full h-[42px] rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors appearance-none cursor-pointer text-slate-800">
                     <option value="">Independiente / Ninguna</option>
                     {institutions.map(inst => (
                       <option key={inst.id} value={inst.id}>{inst.name}</option>
@@ -381,7 +403,7 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-semibold">Dirección Consultorio</label>
-                  <textarea name="address" rows={2} defaultValue={initialData?.address} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none" placeholder="Av. Principal N23..." />
+                  <textarea name="address" rows={2} defaultValue={initialData?.address} className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors resize-none text-slate-800 placeholder:text-slate-400" placeholder="Av. Principal N23..." />
                 </div>
               </div>
             </div>
@@ -393,7 +415,8 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
                    id="doc-terms" 
                    name="terms" 
                    type="checkbox" 
-                   required 
+                   required
+                   defaultChecked={!!initialData}
                    className="mt-1 size-4 rounded border-primary text-primary focus:ring-primary cursor-pointer" 
                  />
                  <label htmlFor="doc-terms" className="text-sm leading-tight cursor-pointer">
@@ -411,7 +434,7 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
             </div>
           )}
 
-          <div className="flex gap-4 pt-6 border-t">
+          <div className="flex gap-4 pt-6 mt-8">
             <button
               type="button"
               onClick={onClose}
@@ -430,6 +453,7 @@ export function DoctorForm({ onClose, onSuccess, initialData }: DoctorFormProps)
           </div>
         </form>
       </article>
+      </div>
     </div>
   );
 }

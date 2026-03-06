@@ -14,22 +14,28 @@ import { useSearchParams, useRouter } from "next/navigation";
 type TabId = "institutions" | "doctors" | "patients" | "appointments" | "schedule" | "configuracion";
 
 export default function Home() {
-  const { role } = useAuth();
+  const { role, loading } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const isAdmin = role === "admin" || role === "webmaster";
   const isDoctor = role === "doctor";
 
   const tabParam = searchParams.get("tab") as TabId | null;
-  const [activeTab, setActiveTab] = useState<TabId>(
-    tabParam || (isAdmin ? "institutions" : "patients")
-  );
+  const [activeTab, setActiveTab] = useState<TabId>("patients");
 
   useEffect(() => {
-    if (tabParam && tabParam !== activeTab) {
+    if (loading) return;
+
+    if (tabParam) {
       setActiveTab(tabParam);
+    } else {
+      // Default tabs based on role
+      const defaultTab = isAdmin ? "institutions" : "patients";
+      setActiveTab(defaultTab);
     }
-  }, [tabParam, activeTab]);
+  }, [loading, tabParam, isAdmin]);
+
+  if (loading) return null;
 
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);

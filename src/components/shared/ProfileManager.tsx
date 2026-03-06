@@ -130,34 +130,43 @@ export function ProfileManager() {
     e.preventDefault();
     if (!user) return;
 
-    setLoading(true);
-    setMessage(null);
+    const updatePayload = {
+      full_name: formData.full_name,
+      specialty: formData.specialty,
+      license_number: formData.license_number,
+      ruc: formData.ruc,
+      phone: formData.phone,
+      address: formData.address,
+      bio: formData.bio,
+      experience_years: formData.experience_years,
+      birth_date: formData.birth_date || null,
+    };
+
+    console.log("ProfileManager: Submitting update for user ID:", user.id, "Payload:", updatePayload);
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .update({
-          full_name: formData.full_name,
-          specialty: formData.specialty,
-          license_number: formData.license_number,
-          ruc: formData.ruc,
-          phone: formData.phone,
-          address: formData.address,
-          bio: formData.bio,
-          experience_years: formData.experience_years,
-          birth_date: formData.birth_date || null,
-        })
-        .eq('id', user.id);
+        .upsert({
+          id: user.id,
+          ...updatePayload
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error("ProfileManager: Update error:", error);
+        throw error;
+      }
+
+      console.log("ProfileManager: Update successful:", data);
 
       await refreshProfile();
       setMessage({ type: 'success', text: "Perfil actualizado correctamente." });
     } catch (error: any) {
-      console.error("Error updating profile:", error);
+      console.error("ProfileManager: Caught error in handleSubmit:", error);
       setMessage({ type: 'error', text: error.message || "Error al actualizar el perfil." });
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   }
 
@@ -235,7 +244,7 @@ export function ProfileManager() {
                     required
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -252,7 +261,7 @@ export function ProfileManager() {
                     type="text"
                     value={formData.ruc}
                     onChange={(e) => setFormData({ ...formData, ruc: e.target.value })}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -261,7 +270,7 @@ export function ProfileManager() {
                     type="number"
                     value={formData.experience_years}
                     onChange={(e) => setFormData({ ...formData, experience_years: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -281,7 +290,7 @@ export function ProfileManager() {
                     required
                     value={formData.specialty}
                     onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -290,7 +299,7 @@ export function ProfileManager() {
                     type="text"
                     value={formData.license_number}
                     onChange={(e) => setFormData({ ...formData, license_number: e.target.value })}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400"
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
@@ -299,7 +308,7 @@ export function ProfileManager() {
                     rows={4}
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all font-medium resize-none text-sm"
+                    className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400 resize-none"
                     placeholder="Escriba una breve descripción de su trayectoria..."
                   />
                 </div>
@@ -319,7 +328,7 @@ export function ProfileManager() {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -328,7 +337,7 @@ export function ProfileManager() {
                     type="text"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400"
                   />
                 </div>
               </div>
