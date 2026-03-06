@@ -1,9 +1,7 @@
-"use client";
-
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Tables } from "@/types/database";
-import { Plus, ClipboardList, Clock, User, X, Printer, Mail, FileText } from "lucide-react";
+import { Plus, ClipboardList, Clock, User, X, Printer, Mail, FileText, Loader2 } from "lucide-react";
 import { ClinicalRecordForm } from "./ClinicalRecordForm";
 
 interface ClinicalRecordManagerProps {
@@ -17,6 +15,15 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [showSlowNetwork, setShowSlowNetwork] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditingHistory, setIsEditingHistory] = useState(false);
+  const [historyForm, setHistoryForm] = useState({
+    physical_illnesses: patient.physical_illnesses || "",
+    allergies: patient.allergies || "",
+    family_history: patient.family_history || "",
+    surgical_history: patient.surgical_history || "",
+    medications: patient.medications || ""
+  });
+  const [isSavingHistory, setIsSavingHistory] = useState(false);
 
   useEffect(() => {
     let timer1: NodeJS.Timeout;
@@ -147,6 +154,27 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
     printWindow.document.close();
   };
 
+  const handleSaveHistory = async () => {
+    try {
+      setIsSavingHistory(true);
+      const { error: updateError } = await supabase
+        .from("patients")
+        .update(historyForm)
+        .eq("id", patient.id);
+
+      if (updateError) throw updateError;
+      
+      // Update local patient object (since it's passed from props, we just update the UI state)
+      Object.assign(patient, historyForm);
+      setIsEditingHistory(false);
+    } catch (err: any) {
+      console.error("Error saving history:", err);
+      alert("Error al guardar antecedentes: " + err.message);
+    } finally {
+      setIsSavingHistory(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40 backdrop-blur-sm">
       <section className="w-full max-w-4xl h-full bg-background shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
@@ -166,6 +194,116 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
         </header>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
+          {/* Ficha de Antecedentes */}
+          <div className="rounded-xl border border-primary/20 bg-muted/30 p-5 space-y-4 relative">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold flex items-center gap-2 text-primary uppercase tracking-wider">
+                <ClipboardList className="size-4" />
+                Ficha de Antecedentes Médicos
+              </h3>
+              <div className="flex gap-2">
+                {!isEditingHistory ? (
+                  <button 
+                    onClick={() => setIsEditingHistory(true)}
+                    className="text-[10px] font-bold uppercase text-primary hover:underline bg-primary/10 px-2 py-1 rounded cursor-pointer"
+                  >
+                    Editar Antecedentes
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setIsEditingHistory(false)}
+                      className="text-[10px] font-bold uppercase text-muted-foreground hover:underline bg-muted px-2 py-1 rounded cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      onClick={handleSaveHistory}
+                      disabled={isSavingHistory}
+                      className="text-[10px] font-bold uppercase text-white bg-primary hover:bg-primary/90 px-2 py-1 rounded cursor-pointer flex items-center gap-1"
+                    >
+                      {isSavingHistory && <Loader2 className="size-3 animate-spin" />}
+                      Guardar Cambios
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-3">
+                <div className="p-3 rounded-lg bg-background border shadow-sm">
+                  <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-1">Enfermedades Físicas / Crónicas</h4>
+                  {isEditingHistory ? (
+                    <textarea 
+                      value={historyForm.physical_illnesses}
+                      onChange={(e) => setHistoryForm({...historyForm, physical_illnesses: e.target.value})}
+                      className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
+                      rows={2}
+                    />
+                  ) : (
+                    <p className="text-sm font-medium">{patient.physical_illnesses || "Ninguna registrada"}</p>
+                  )}
+                </div>
+                <div className="p-3 rounded-lg bg-background border-l-4 border-l-destructive shadow-sm">
+                  <h4 className="text-[10px] font-black uppercase text-destructive mb-1">Alergias</h4>
+                  {isEditingHistory ? (
+                    <textarea 
+                      value={historyForm.allergies}
+                      onChange={(e) => setHistoryForm({...historyForm, allergies: e.target.value})}
+                      className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
+                      rows={2}
+                    />
+                  ) : (
+                    <p className="text-sm font-bold text-destructive">{patient.allergies || "Ninguna conocida"}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-3 rounded-lg bg-background border shadow-sm">
+                  <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-1">Antecedentes Familiares</h4>
+                  {isEditingHistory ? (
+                    <textarea 
+                      value={historyForm.family_history}
+                      onChange={(e) => setHistoryForm({...historyForm, family_history: e.target.value})}
+                      className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
+                      rows={2}
+                    />
+                  ) : (
+                    <p className="text-sm">{patient.family_history || "No reportados"}</p>
+                  )}
+                </div>
+                <div className="p-3 rounded-lg bg-background border shadow-sm">
+                  <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-1">Antecedentes Quirúrgicos</h4>
+                  {isEditingHistory ? (
+                    <textarea 
+                      value={historyForm.surgical_history}
+                      onChange={(e) => setHistoryForm({...historyForm, surgical_history: e.target.value})}
+                      className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none"
+                      rows={2}
+                    />
+                  ) : (
+                    <p className="text-sm">{patient.surgical_history || "No reportados"}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-background border shadow-sm min-h-[120px]">
+                <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-1">Medicación Actual</h4>
+                {isEditingHistory ? (
+                  <textarea 
+                    value={historyForm.medications}
+                    onChange={(e) => setHistoryForm({...historyForm, medications: e.target.value})}
+                    className="w-full text-sm rounded border bg-muted/20 p-2 focus:ring-1 focus:ring-primary outline-none h-[80px]"
+                  />
+                ) : (
+                  <p className="text-sm italic">{patient.medications || "No consume medicación"}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <ClipboardList className="size-5 text-primary" />
@@ -231,27 +369,69 @@ export function ClinicalRecordManager({ patient, onClose }: ClinicalRecordManage
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <div>
-                        <h5 className="text-xs font-black text-primary/70 uppercase mb-1">Subjetivo (S)</h5>
+                        <h5 className="text-xs font-black text-primary uppercase mb-1">Subjetivo (S)</h5>
                         <p className="text-sm leading-relaxed">{record.subjective || "---"}</p>
                       </div>
                       <div>
-                        <h5 className="text-xs font-black text-primary/70 uppercase mb-1">Objetivo (O)</h5>
+                        <h5 className="text-xs font-black text-primary uppercase mb-1">Objetivo (O)</h5>
                         <p className="text-sm leading-relaxed">{record.objective || "---"}</p>
                       </div>
                     </div>
                     <div className="space-y-4">
                       <div>
-                        <h5 className="text-xs font-black text-primary/70 uppercase mb-1">Análisis (A)</h5>
+                        <h5 className="text-xs font-black text-primary uppercase mb-1">Análisis (A)</h5>
                         <div className="text-sm italic text-muted-foreground bg-muted/50 p-2 rounded border-l-2 border-primary/50">
                           {record.internal_notes || "---"}
                         </div>
                       </div>
                       <div>
-                        <h5 className="text-xs font-black text-primary/70 uppercase mb-1">Plan (P)</h5>
+                        <h5 className="text-xs font-black text-primary uppercase mb-1">Plan (P)</h5>
                         <p className="text-sm leading-relaxed font-medium text-foreground">{record.plan || "---"}</p>
                       </div>
                     </div>
                   </div>
+
+                  {/* Signos Vitales Summary */}
+                  {(record.weight || record.height || record.temperature || record.blood_pressure_sys) && (
+                    <div className="mt-6 flex flex-wrap gap-4 p-3 rounded-lg bg-muted/50 border border-muted-foreground/10">
+                      {record.blood_pressure_sys && (
+                        <div className="text-center px-3 border-r border-muted-foreground/20 last:border-0">
+                          <p className="text-[9px] font-bold uppercase text-muted-foreground">Presión</p>
+                          <p className="text-xs font-bold">{record.blood_pressure_sys}/{record.blood_pressure_dia}</p>
+                        </div>
+                      )}
+                      {record.heart_rate && (
+                        <div className="text-center px-3 border-r border-muted-foreground/20 last:border-0">
+                          <p className="text-[9px] font-bold uppercase text-muted-foreground">FC</p>
+                          <p className="text-xs font-bold">{record.heart_rate} <span className="text-[10px] font-normal">bpm</span></p>
+                        </div>
+                      )}
+                      {record.temperature && (
+                        <div className="text-center px-3 border-r border-muted-foreground/20 last:border-0">
+                          <p className="text-[9px] font-bold uppercase text-muted-foreground">Temp</p>
+                          <p className="text-xs font-bold">{record.temperature}°C</p>
+                        </div>
+                      )}
+                      {record.weight && (
+                        <div className="text-center px-3 border-r border-muted-foreground/20 last:border-0">
+                          <p className="text-[9px] font-bold uppercase text-muted-foreground">Peso</p>
+                          <p className="text-xs font-bold">{record.weight}kg</p>
+                        </div>
+                      )}
+                      {record.height && (
+                        <div className="text-center px-3 border-r border-muted-foreground/20 last:border-0">
+                          <p className="text-[9px] font-bold uppercase text-muted-foreground">Talla</p>
+                          <p className="text-xs font-bold">{record.height}cm</p>
+                        </div>
+                      )}
+                      {record.oxygen_saturation && (
+                        <div className="text-center px-3 border-r border-muted-foreground/20 last:border-0">
+                          <p className="text-[9px] font-bold uppercase text-muted-foreground">SpO2</p>
+                          <p className="text-xs font-bold">{record.oxygen_saturation}%</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {record.prescription && (
                     <div id={`print-prescription-${record.id}`} className="mt-6 p-4 rounded-lg bg-primary/5 border border-primary/20 relative">

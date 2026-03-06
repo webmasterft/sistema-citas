@@ -48,6 +48,11 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
     const phone = formData.get("phone") as string;
     const email = formData.get("email") as string;
     const address = formData.get("address") as string;
+    const physical_illnesses = formData.get("physical_illnesses") as string;
+    const allergies = formData.get("allergies") as string;
+    const family_history = formData.get("family_history") as string;
+    const surgical_history = formData.get("surgical_history") as string;
+    const medications = formData.get("medications") as string;
 
     try {
       if (initialData?.id) {
@@ -61,7 +66,12 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
             gender, 
             phone, 
             email, 
-            address
+            address,
+            physical_illnesses,
+            allergies,
+            family_history,
+            surgical_history,
+            medications
           })
           .eq("id", initialData.id);
         if (submitError) throw submitError;
@@ -77,7 +87,12 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
             phone, 
             email, 
             address,
-            doctor_id: user.id
+            doctor_id: user.id,
+            physical_illnesses,
+            allergies,
+            family_history,
+            surgical_history,
+            medications
           }]);
         if (submitError) throw submitError;
       }
@@ -223,6 +238,67 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
               className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring resize-none"
               placeholder="Calle principal, secundaria, nro de casa..."
             />
+          </div>
+
+          <div className="md:col-span-2 border-t pt-4 mt-2">
+            <h4 className="text-sm font-bold text-primary mb-4">Antecedentes Médicos</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="physical_illnesses" className="text-xs font-bold uppercase text-muted-foreground">Enfermedades Físicas / Crónicas</label>
+                <textarea
+                  id="physical_illnesses"
+                  name="physical_illnesses"
+                  defaultValue={initialData?.physical_illnesses}
+                  rows={2}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                  placeholder="Ej: Hipertensión, Diabetes..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="allergies" className="text-xs font-bold uppercase text-muted-foreground">Alergias</label>
+                <textarea
+                  id="allergies"
+                  name="allergies"
+                  defaultValue={initialData?.allergies}
+                  rows={2}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                  placeholder="Ej: Penicilina, Polen..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="family_history" className="text-xs font-bold uppercase text-muted-foreground">Antecedentes Familiares</label>
+                <textarea
+                  id="family_history"
+                  name="family_history"
+                  defaultValue={initialData?.family_history}
+                  rows={2}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                  placeholder="Ej: Cáncer de colon (padre)..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="surgical_history" className="text-xs font-bold uppercase text-muted-foreground">Antecedentes Quirúrgicos</label>
+                <textarea
+                  id="surgical_history"
+                  name="surgical_history"
+                  defaultValue={initialData?.surgical_history}
+                  rows={2}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                  placeholder="Ej: Apendicectomía (2015)..."
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="medications" className="text-xs font-bold uppercase text-muted-foreground">Medicación Actual</label>
+                <textarea
+                  id="medications"
+                  name="medications"
+                  defaultValue={initialData?.medications}
+                  rows={2}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
+                  placeholder="Ej: Losartán 50mg/día..."
+                />
+              </div>
+            </div>
           </div>
 
           {error && (
