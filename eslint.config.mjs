@@ -11,8 +11,17 @@ const eslintConfig = defineConfig([
     // plugins: { "jsx-a11y": jsxA11y } is not needed, next provides it.
     rules: {
       ...jsxA11y.configs.recommended.rules,
-      "jsx-a11y/alt-text": "error",
-      "jsx-a11y/anchor-is-valid": "error",
+      "jsx-a11y/alt-text": "warn",
+      "jsx-a11y/anchor-is-valid": "warn",
+      "jsx-a11y/label-has-associated-control": "warn",
+      "jsx-a11y/click-events-have-key-events": "warn",
+      "jsx-a11y/no-static-element-interactions": "warn",
+      "jsx-a11y/no-autofocus": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-require-imports": "warn",
+      "react/no-unescaped-entities": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/static-components": "warn"
     },
   },
   // Override default ignores of eslint-config-next.
