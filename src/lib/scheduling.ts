@@ -28,9 +28,7 @@ export function generateSlots(
   while (currentMinutes + durationMinutes <= endMinutes) {
     const h = Math.floor(currentMinutes / 60);
     const m = currentMinutes % 60;
-    slots.push(
-      `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
-    );
+    slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     currentMinutes += durationMinutes;
   }
 
@@ -107,9 +105,7 @@ export async function getAvailableSlots(
     }
 
     // Check if overlaps with any booked appointment
-    const isBooked = bookedRanges.some(
-      (b) => slotStartMin < b.end && slotEndMin > b.start
-    );
+    const isBooked = bookedRanges.some((b) => slotStartMin < b.end && slotEndMin > b.start);
 
     return {
       time,

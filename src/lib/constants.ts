@@ -27,5 +27,5 @@ export const MEDICAL_SPECIALTIES = [
   "Radiología",
   "Reumatología",
   "Traumatología y Ortopedia",
-  "Urología"
+  "Urología",
 ].sort();

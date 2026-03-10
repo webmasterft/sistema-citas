@@ -3,7 +3,20 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
-import { User, Camera, Loader2, CheckCircle2, AlertCircle, Save, Phone, MapPin, Briefcase, FileText, Calendar, Key } from "lucide-react";
+import {
+  User,
+  Camera,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Save,
+  Phone,
+  MapPin,
+  Briefcase,
+  FileText,
+  Calendar,
+  Key,
+} from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -18,7 +31,7 @@ export function ProfileManager() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingSignature, setUploadingSignature] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [selectedImageToCrop, setSelectedImageToCrop] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -59,7 +72,7 @@ export function ProfileManager() {
     };
     reader.readAsDataURL(file);
     // Reset input value so same file can be selected again
-    e.target.value = '';
+    e.target.value = "";
   }
 
   async function handleCropComplete(croppedFile: File) {
@@ -74,32 +87,30 @@ export function ProfileManager() {
       setUploading(true);
       setMessage(null);
 
-      const fileExt = 'jpg'; // We standardized to jpg in getCroppedImg
+      const fileExt = "jpg"; // We standardized to jpg in getCroppedImg
       const fileName = `${user.id}-${Math.random()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
       const { error: updateError } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (updateError) throw updateError;
 
       await refreshProfile();
-      setMessage({ type: 'success', text: "Avatar actualizado correctamente." });
+      setMessage({ type: "success", text: "Avatar actualizado correctamente." });
     } catch (error: any) {
       console.error("Error uploading avatar:", error);
-      setMessage({ type: 'error', text: error.message || "Error al subir el avatar." });
+      setMessage({ type: "error", text: error.message || "Error al subir el avatar." });
     } finally {
       setUploading(false);
     }
@@ -113,33 +124,36 @@ export function ProfileManager() {
       setUploadingSignature(true);
       setMessage(null);
 
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}-signature.${fileExt}`;
       const filePath = `signatures/${fileName}`;
 
       // Create bucket if it doesn't exist (this might fail if no permissions, but we try upsert)
       const { error: uploadError } = await supabase.storage
-        .from('signatures')
+        .from("signatures")
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('signatures')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("signatures").getPublicUrl(filePath);
 
       const { error: updateError } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({ signature_p12_url: publicUrl })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (updateError) throw updateError;
 
       await refreshProfile();
-      setMessage({ type: 'success', text: "Firma electrónica cargada correctamente." });
+      setMessage({ type: "success", text: "Firma electrónica cargada correctamente." });
     } catch (error: any) {
       console.error("Error uploading signature:", error);
-      setMessage({ type: 'error', text: "Error al subir la firma. Asegúrese de que el archivo es válido." });
+      setMessage({
+        type: "error",
+        text: "Error al subir la firma. Asegúrese de que el archivo es válido.",
+      });
     } finally {
       setUploadingSignature(false);
     }
@@ -161,15 +175,18 @@ export function ProfileManager() {
       birth_date: formData.birth_date || null,
     };
 
-    console.log("ProfileManager: Submitting update for user ID:", user.id, "Payload:", updatePayload);
+    console.log(
+      "ProfileManager: Submitting update for user ID:",
+      user.id,
+      "Payload:",
+      updatePayload
+    );
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          ...updatePayload
-        });
+      const { data, error } = await supabase.from("profiles").upsert({
+        id: user.id,
+        ...updatePayload,
+      });
 
       if (error) {
         console.error("ProfileManager: Update error:", error);
@@ -179,10 +196,10 @@ export function ProfileManager() {
       console.log("ProfileManager: Update successful:", data);
 
       await refreshProfile();
-      setMessage({ type: 'success', text: "Perfil actualizado correctamente." });
+      setMessage({ type: "success", text: "Perfil actualizado correctamente." });
     } catch (error: any) {
       console.error("ProfileManager: Caught error in handleSubmit:", error);
-      setMessage({ type: 'error', text: error.message || "Error al actualizar el perfil." });
+      setMessage({ type: "error", text: error.message || "Error al actualizar el perfil." });
     } finally {
       setLoading(false);
       setUploading(false);
@@ -198,7 +215,11 @@ export function ProfileManager() {
             <div className="relative group">
               <div className="size-48 rounded-3xl bg-slate-100 overflow-hidden border-4 border-white shadow-xl flex items-center justify-center">
                 {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  <img
+                    src={profile.avatar_url}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <User className="size-20 text-slate-300" />
                 )}
@@ -210,30 +231,44 @@ export function ProfileManager() {
               </div>
               <label className="absolute -bottom-2 -right-2 p-3 bg-primary text-white rounded-2xl shadow-lg cursor-pointer hover:scale-110 transition-transform active:scale-95 shadow-primary/20">
                 <Camera className="size-5" />
-                <input type="file" className="hidden" accept="image/*" onChange={handleAvatarSelect} disabled={uploading} />
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleAvatarSelect}
+                  disabled={uploading}
+                />
               </label>
             </div>
 
             {selectedImageToCrop && (
-              <ImageCropper 
+              <ImageCropper
                 imageSrc={selectedImageToCrop}
                 onCropComplete={handleCropComplete}
                 onCancel={() => setSelectedImageToCrop(null)}
               />
             )}
-            
+
             <div className="text-center">
               <h3 className="font-bold text-lg">{profile?.full_name || "Doctor"}</h3>
-              <p className="text-primary text-sm font-semibold">{profile?.specialty || "Especialidad no definida"}</p>
+              <p className="text-primary text-sm font-semibold">
+                {profile?.specialty || "Especialidad no definida"}
+              </p>
             </div>
 
             <div className="w-full pt-6 border-t border-slate-100">
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4 text-center">Firma Electrónica (.p12)</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4 text-center">
+                Firma Electrónica (.p12)
+              </p>
               <div className="relative">
-                <label className={cn(
-                  "flex items-center gap-3 p-3 rounded-xl border-2 border-dashed transition-all cursor-pointer group",
-                  profile?.signature_p12_url ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-200 hover:border-primary/40"
-                )}>
+                <label
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl border-2 border-dashed transition-all cursor-pointer group",
+                    profile?.signature_p12_url
+                      ? "bg-emerald-50 border-emerald-200"
+                      : "bg-slate-50 border-slate-200 hover:border-primary/40"
+                  )}
+                >
                   {uploadingSignature ? (
                     <Loader2 className="size-5 animate-spin text-primary" />
                   ) : profile?.signature_p12_url ? (
@@ -247,7 +282,13 @@ export function ProfileManager() {
                     </p>
                     <p className="text-[9px] text-slate-400 truncate">Requerida para facturación</p>
                   </div>
-                  <input type="file" className="hidden" accept=".p12" onChange={handleSignatureUpload} disabled={uploadingSignature} />
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".p12"
+                    onChange={handleSignatureUpload}
+                    disabled={uploadingSignature}
+                  />
                 </label>
               </div>
             </div>
@@ -277,8 +318,15 @@ export function ProfileManager() {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">Fecha de Nacimiento</label>
                   <DatePicker
-                    selected={formData.birth_date ? new Date(formData.birth_date + "T12:00:00") : null}
-                    onChange={(date) => setFormData({ ...formData, birth_date: date ? date.toISOString().split('T')[0] : "" })}
+                    selected={
+                      formData.birth_date ? new Date(formData.birth_date + "T12:00:00") : null
+                    }
+                    onChange={(date) =>
+                      setFormData({
+                        ...formData,
+                        birth_date: date ? date.toISOString().split("T")[0] : "",
+                      })
+                    }
                     placeholderText="Seleccione fecha"
                   />
                 </div>
@@ -296,7 +344,9 @@ export function ProfileManager() {
                   <input
                     type="number"
                     value={formData.experience_years}
-                    onChange={(e) => setFormData({ ...formData, experience_years: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, experience_years: parseInt(e.target.value) || 0 })
+                    }
                     className="w-full rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-slate-800 placeholder:text-slate-400"
                   />
                 </div>
@@ -359,7 +409,9 @@ export function ProfileManager() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">Dirección de Consultorio</label>
+                  <label className="text-sm font-bold text-slate-700">
+                    Dirección de Consultorio
+                  </label>
                   <input
                     type="text"
                     value={formData.address}
@@ -371,11 +423,19 @@ export function ProfileManager() {
             </div>
 
             {message && (
-              <div className={cn(
-                "p-4 rounded-xl border flex items-center gap-3",
-                message.type === 'success' ? "bg-emerald-50 border-emerald-100 text-emerald-700" : "bg-red-50 border-red-100 text-red-700"
-              )}>
-                {message.type === 'success' ? <CheckCircle2 className="size-5" /> : <AlertCircle className="size-5" />}
+              <div
+                className={cn(
+                  "p-4 rounded-xl border flex items-center gap-3",
+                  message.type === "success"
+                    ? "bg-emerald-50 border-emerald-100 text-emerald-700"
+                    : "bg-red-50 border-red-100 text-red-700"
+                )}
+              >
+                {message.type === "success" ? (
+                  <CheckCircle2 className="size-5" />
+                ) : (
+                  <AlertCircle className="size-5" />
+                )}
                 <p className="text-sm font-bold">{message.text}</p>
               </div>
             )}
@@ -386,7 +446,11 @@ export function ProfileManager() {
                 disabled={loading}
                 className="w-full lg:w-auto bg-primary text-white font-bold py-4 px-12 rounded-xl hover:scale-105 transition-all active:scale-95 disabled:opacity-50 disabled:scale-100 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer"
               >
-                {loading ? <Loader2 className="size-5 animate-spin" /> : <Save className="size-5" />}
+                {loading ? (
+                  <Loader2 className="size-5 animate-spin" />
+                ) : (
+                  <Save className="size-5" />
+                )}
                 {loading ? "Guardando cambios..." : "Guardar Perfil Completo"}
               </button>
             </div>

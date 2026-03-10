@@ -17,18 +17,19 @@ export function PatientManager() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Tables<"patients"> | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPatientForHistory, setSelectedPatientForHistory] = useState<Tables<"patients"> | null>(null);
+  const [selectedPatientForHistory, setSelectedPatientForHistory] =
+    useState<Tables<"patients"> | null>(null);
   const [showSlowNetwork, setShowSlowNetwork] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let timer1: NodeJS.Timeout;
     let timer2: NodeJS.Timeout;
-    
+
     if (loading) {
       // Mostrar advertencia de red lenta después de 4 segundos
       timer1 = setTimeout(() => setShowSlowNetwork(true), 4000);
-      
+
       // Failsafe absoluto: abortar el estado de carga después de 10 segundos
       // Esto previene que la aplicación se "congele" para siempre
       timer2 = setTimeout(() => {
@@ -38,7 +39,7 @@ export function PatientManager() {
     } else {
       setShowSlowNetwork(false);
     }
-    
+
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
@@ -49,12 +50,9 @@ export function PatientManager() {
     try {
       setLoading(true);
       console.log("Fetching patients for user:", user?.id, "with role:", role);
-      
-      let query = supabase
-        .from("patients")
-        .select("*")
-        .order("last_name");
-      
+
+      let query = supabase.from("patients").select("*").order("last_name");
+
       // Solo filtrar si NO es administrador
       const isAdmin = role === "admin";
       if (!isAdmin && user) {
@@ -63,13 +61,15 @@ export function PatientManager() {
       } else {
         console.log("Admin access: Fetching all patients");
       }
-      
+
       if (searchQuery) {
-        query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,id_number.ilike.%${searchQuery}%`);
+        query = query.or(
+          `first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,id_number.ilike.%${searchQuery}%`
+        );
       }
 
       const { data, error } = await query;
-      
+
       if (!error && data) {
         setPatients(data);
         setError(null);
@@ -113,9 +113,11 @@ export function PatientManager() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Pacientes</h2>
-          <p className="text-muted-foreground">Listado general de pacientes y acceso a historias clínicas.</p>
+          <p className="text-muted-foreground">
+            Listado general de pacientes y acceso a historias clínicas.
+          </p>
         </div>
-        <button 
+        <button
           onClick={() => {
             setEditingPatient(null);
             setIsFormOpen(true);
@@ -129,7 +131,7 @@ export function PatientManager() {
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-        <input 
+        <input
           type="search"
           placeholder="Buscar paciente por nombre o identificación..."
           className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
@@ -139,12 +141,12 @@ export function PatientManager() {
       </div>
 
       {isFormOpen && (
-        <PatientForm 
+        <PatientForm
           onClose={() => {
             setIsFormOpen(false);
             setEditingPatient(null);
-          }} 
-          onSuccess={fetchPatients} 
+          }}
+          onSuccess={fetchPatients}
           initialData={editingPatient}
         />
       )}
@@ -167,15 +169,22 @@ export function PatientManager() {
                   <td colSpan={5} className="px-6 py-12 text-center">
                     <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-4"></div>
                     <p className="text-muted-foreground">Cargando pacientes...</p>
-                    {showSlowNetwork && <p className="text-xs text-amber-500 mt-2">Esto está tardando más de lo normal...</p>}
+                    {showSlowNetwork && (
+                      <p className="text-xs text-amber-500 mt-2">
+                        Esto está tardando más de lo normal...
+                      </p>
+                    )}
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
                     <div className="text-destructive font-medium mb-4">{error}</div>
-                    <button 
-                      onClick={() => { setError(null); fetchPatients(); }}
+                    <button
+                      onClick={() => {
+                        setError(null);
+                        fetchPatients();
+                      }}
                       className="text-sm px-4 py-2 bg-muted rounded-md border hover:bg-muted/80 transition-colors"
                     >
                       Reintentar carga
@@ -192,12 +201,16 @@ export function PatientManager() {
               ) : (
                 patients.map((patient) => {
                   const birthDate = patient.birth_date ? new Date(patient.birth_date) : null;
-                  const age = birthDate ? new Date().getFullYear() - birthDate.getFullYear() : "N/A";
-                  
+                  const age = birthDate
+                    ? new Date().getFullYear() - birthDate.getFullYear()
+                    : "N/A";
+
                   return (
                     <tr key={patient.id} className="hover:bg-accent/30 transition-colors group">
                       <td className="px-6 py-4">
-                        <div className="font-bold text-foreground">{patient.first_name} {patient.last_name}</div>
+                        <div className="font-bold text-foreground">
+                          {patient.first_name} {patient.last_name}
+                        </div>
                         <div className="text-xs text-muted-foreground">{patient.email}</div>
                       </td>
                       <td className="px-6 py-4 font-mono text-xs">{patient.id_number}</td>
@@ -208,7 +221,7 @@ export function PatientManager() {
                       <td className="px-6 py-4">{patient.phone || "---"}</td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-1">
-                          <button 
+                          <button
                             onClick={() => setSelectedPatientForHistory(patient)}
                             className="p-2 text-primary hover:bg-primary/10 rounded-md flex items-center gap-1 text-xs font-medium cursor-pointer"
                             title="Ver Historia Clínica"
@@ -216,20 +229,25 @@ export function PatientManager() {
                             <History className="size-4" />
                             <span className="hidden sm:inline">Historia</span>
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               setEditingPatient(patient);
                               setIsFormOpen(true);
                             }}
-                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer" 
+                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer"
                             aria-label="Editar"
                           >
                             <Pencil className="size-4" />
                           </button>
                           {(role === "admin" || role === "webmaster") && (
-                            <button 
-                              onClick={() => handleDelete(patient.id, `${patient.first_name} ${patient.last_name}`)}
-                              className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer" 
+                            <button
+                              onClick={() =>
+                                handleDelete(
+                                  patient.id,
+                                  `${patient.first_name} ${patient.last_name}`
+                                )
+                              }
+                              className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer"
                               aria-label="Eliminar"
                             >
                               <Trash2 className="size-4" />
@@ -247,9 +265,9 @@ export function PatientManager() {
       </div>
 
       {selectedPatientForHistory && (
-        <ClinicalRecordManager 
-          patient={selectedPatientForHistory} 
-          onClose={() => setSelectedPatientForHistory(null)} 
+        <ClinicalRecordManager
+          patient={selectedPatientForHistory}
+          onClose={() => setSelectedPatientForHistory(null)}
         />
       )}
     </section>

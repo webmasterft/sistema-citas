@@ -21,8 +21,7 @@ async function run() {
 
   // Example: Prompt Gemini
   try {
-    const prompt =
-      "Explain how Gemini and Supabase work together in 2 sentences.";
+    const prompt = "Explain how Gemini and Supabase work together in 2 sentences.";
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
@@ -38,9 +37,7 @@ if (
   !process.env.SUPABASE_URL ||
   !process.env.SUPABASE_SERVICE_ROLE_KEY
 ) {
-  console.error(
-    "❌ Missing environment variables. Please check your .env file.",
-  );
+  console.error("❌ Missing environment variables. Please check your .env file.");
   process.exit(1);
 }
 

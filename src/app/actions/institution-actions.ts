@@ -14,18 +14,16 @@ export async function createInstitutionAccount(email: string, password: string, 
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: name, role: 'admin' } // O a new role 'institution_admin' if needed
+      user_metadata: { full_name: name, role: "admin" }, // O a new role 'institution_admin' if needed
     });
 
     if (authError) throw authError;
 
-    const { error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .upsert({
-        id: authData.user.id,
-        full_name: name,
-        role: 'admin' // Institutions are managed by admins for now
-      });
+    const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
+      id: authData.user.id,
+      full_name: name,
+      role: "admin", // Institutions are managed by admins for now
+    });
 
     if (profileError) throw profileError;
 
@@ -36,7 +34,10 @@ export async function createInstitutionAccount(email: string, password: string, 
   }
 }
 
-export async function updateInstitutionAccount(userId: string, data: { email?: string; password?: string; name?: string }) {
+export async function updateInstitutionAccount(
+  userId: string,
+  data: { email?: string; password?: string; name?: string }
+) {
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,

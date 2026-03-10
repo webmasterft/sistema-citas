@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import url("tailwindcss");
 
 @theme {
   --color-background: hsl(var(--background));
@@ -80,6 +80,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -141,5 +142,3 @@
 .react-datepicker__day-names {
   margin-top: 5px !important;
 }
-
-

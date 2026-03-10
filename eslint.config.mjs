@@ -8,9 +8,7 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
-    plugins: {
-      "jsx-a11y": jsxA11y,
-    },
+    // plugins: { "jsx-a11y": jsxA11y } is not needed, next provides it.
     rules: {
       ...jsxA11y.configs.recommended.rules,
       "jsx-a11y/alt-text": "error",

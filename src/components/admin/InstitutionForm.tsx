@@ -2,9 +2,24 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { X, Loader2, Building2, Phone, Mail, Globe, MapPin, User, Clock, Lock, ShieldCheck } from "lucide-react";
+import {
+  X,
+  Loader2,
+  Building2,
+  Phone,
+  Mail,
+  Globe,
+  MapPin,
+  User,
+  Clock,
+  Lock,
+  ShieldCheck,
+} from "lucide-react";
 import { translateError } from "@/lib/error-translator";
-import { createInstitutionAccount, updateInstitutionAccount } from "@/app/actions/institution-actions";
+import {
+  createInstitutionAccount,
+  updateInstitutionAccount,
+} from "@/app/actions/institution-actions";
 
 interface InstitutionFormProps {
   onClose: () => void;
@@ -22,7 +37,7 @@ export function InstitutionForm({ onClose, onSuccess, initialData }: Institution
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    
+
     // Validar contraseñas
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirm_password") as string;
@@ -72,19 +87,16 @@ export function InstitutionForm({ onClose, onSuccess, initialData }: Institution
         num_professionals: parseInt(formData.get("professionals") as string) || null,
         timezone: formData.get("timezone") as string,
         preferred_language: formData.get("language") as string,
-        auth_user_id: authUserId
+        auth_user_id: authUserId,
       };
 
       const query = supabase.from("institutions") as any;
 
       if (initialData?.id) {
-        const { error: submitError } = await query
-          .update(payload)
-          .eq("id", initialData.id);
+        const { error: submitError } = await query.update(payload).eq("id", initialData.id);
         if (submitError) throw submitError;
       } else {
-        const { error: submitError } = await query
-          .insert([payload]);
+        const { error: submitError } = await query.insert([payload]);
         if (submitError) throw submitError;
       }
 
@@ -109,14 +121,17 @@ export function InstitutionForm({ onClose, onSuccess, initialData }: Institution
               Complete todos los campos requeridos para habilitar la gestión institucional.
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-accent rounded-full transition-colors cursor-pointer" aria-label="Cerrar">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-accent rounded-full transition-colors cursor-pointer"
+            aria-label="Cerrar"
+          >
             <X className="size-6" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-            
             {/* 1. Información básica */}
             <div className="space-y-4">
               <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary/70">
@@ -124,12 +139,21 @@ export function InstitutionForm({ onClose, onSuccess, initialData }: Institution
               </h4>
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Nombre de la Institución *</label>
-                <input name="name" defaultValue={initialData?.name} required className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
+                <input
+                  name="name"
+                  defaultValue={initialData?.name}
+                  required
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Tipo *</label>
-                  <select name="type" defaultValue={initialData?.institution_type || "Clinica"} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none">
+                  <select
+                    name="type"
+                    defaultValue={initialData?.institution_type || "Clinica"}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  >
                     <option value="Hospital">Hospital</option>
                     <option value="Clinica">Clínica</option>
                     <option value="Centro de salud">Centro de Salud</option>
@@ -138,12 +162,22 @@ export function InstitutionForm({ onClose, onSuccess, initialData }: Institution
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold font-mono">RUC / NIT *</label>
-                  <input name="ruc" defaultValue={initialData?.ruc} required pattern="[0-9]{13}" className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                  <input
+                    name="ruc"
+                    defaultValue={initialData?.ruc}
+                    required
+                    pattern="[0-9]{13}"
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Licencia Sanitaria</label>
-                <input name="license" defaultValue={initialData?.sanitary_license} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                <input
+                  name="license"
+                  defaultValue={initialData?.sanitary_license}
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                />
               </div>
             </div>
 
@@ -154,25 +188,50 @@ export function InstitutionForm({ onClose, onSuccess, initialData }: Institution
               </h4>
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Dirección Física *</label>
-                <input name="address" defaultValue={initialData?.address} required className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                <input
+                  name="address"
+                  defaultValue={initialData?.address}
+                  required
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Teléfono Principal *</label>
-                  <input name="phone" defaultValue={initialData?.phone} required className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                  <input
+                    name="phone"
+                    defaultValue={initialData?.phone}
+                    required
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Teléfono Alt.</label>
-                  <input name="phone_alt" defaultValue={initialData?.phone_alt} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                  <input
+                    name="phone_alt"
+                    defaultValue={initialData?.phone_alt}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Email General *</label>
-                <input name="general_email" type="email" defaultValue={initialData?.email} required className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                <input
+                  name="general_email"
+                  type="email"
+                  defaultValue={initialData?.email}
+                  required
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Sitio Web</label>
-                <input name="website" type="url" defaultValue={initialData?.website} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                <input
+                  name="website"
+                  type="url"
+                  defaultValue={initialData?.website}
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                />
               </div>
             </div>
 
@@ -183,20 +242,39 @@ export function InstitutionForm({ onClose, onSuccess, initialData }: Institution
               </h4>
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Nombre Completo *</label>
-                <input name="resp_name" defaultValue={initialData?.responsible_name} required className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                <input
+                  name="resp_name"
+                  defaultValue={initialData?.responsible_name}
+                  required
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Cargo</label>
-                <input name="resp_position" defaultValue={initialData?.responsible_position} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                <input
+                  name="resp_position"
+                  defaultValue={initialData?.responsible_position}
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Email Resp. *</label>
-                  <input name="resp_email" type="email" defaultValue={initialData?.responsible_email} required className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                  <input
+                    name="resp_email"
+                    type="email"
+                    defaultValue={initialData?.responsible_email}
+                    required
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Móvil Resp.</label>
-                  <input name="resp_phone" defaultValue={initialData?.responsible_phone} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                  <input
+                    name="resp_phone"
+                    defaultValue={initialData?.responsible_phone}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
                 </div>
               </div>
             </div>
@@ -208,12 +286,22 @@ export function InstitutionForm({ onClose, onSuccess, initialData }: Institution
               </h4>
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Horario de Atención *</label>
-                <input name="hours" defaultValue={initialData?.operating_hours} required placeholder="L-V 08:00-20:00, Sáb 08:00-14:00" className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                <input
+                  name="hours"
+                  defaultValue={initialData?.operating_hours}
+                  required
+                  placeholder="L-V 08:00-20:00, Sáb 08:00-14:00"
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Zona Horaria *</label>
-                  <select name="timezone" defaultValue={initialData?.timezone || "America/Guayaquil"} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none">
+                  <select
+                    name="timezone"
+                    defaultValue={initialData?.timezone || "America/Guayaquil"}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  >
                     <option value="America/Guayaquil">Ecuador (Guayaquil)</option>
                     <option value="America/Bogota">Colombia (Bogotá)</option>
                     <option value="America/Lima">Perú (Lima)</option>
@@ -221,7 +309,11 @@ export function InstitutionForm({ onClose, onSuccess, initialData }: Institution
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Idioma *</label>
-                  <select name="language" defaultValue={initialData?.preferred_language || "es"} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none">
+                  <select
+                    name="language"
+                    defaultValue={initialData?.preferred_language || "es"}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  >
                     <option value="es">Español</option>
                     <option value="en">English</option>
                   </select>
@@ -229,7 +321,12 @@ export function InstitutionForm({ onClose, onSuccess, initialData }: Institution
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-semibold">Num. Profesionales</label>
-                <input name="professionals" type="number" defaultValue={initialData?.num_professionals} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                <input
+                  name="professionals"
+                  type="number"
+                  defaultValue={initialData?.num_professionals}
+                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                />
               </div>
             </div>
 
@@ -240,37 +337,58 @@ export function InstitutionForm({ onClose, onSuccess, initialData }: Institution
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-muted-foreground uppercase">Usuario (Email General)</label>
-                  <p className="text-xs p-2 bg-accent/50 rounded-lg italic">Se usará el email general arriba indicado.</p>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">
+                    Usuario (Email General)
+                  </label>
+                  <p className="text-xs p-2 bg-accent/50 rounded-lg italic">
+                    Se usará el email general arriba indicado.
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold">{initialData ? "Nueva Contraseña" : "Contraseña *"}</label>
-                  <input name="password" type="password" required={!initialData} minLength={6} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                  <label className="text-sm font-semibold">
+                    {initialData ? "Nueva Contraseña" : "Contraseña *"}
+                  </label>
+                  <input
+                    name="password"
+                    type="password"
+                    required={!initialData}
+                    minLength={6}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold">Confirmar Contraseña *</label>
-                  <input name="confirm_password" type="password" required={!initialData} minLength={6} className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+                  <input
+                    name="confirm_password"
+                    type="password"
+                    required={!initialData}
+                    minLength={6}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
                 </div>
               </div>
             </div>
 
             {/* 6. Aceptación de términos */}
             <div className="space-y-4 pt-6 border-t md:col-span-2">
-               <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
-                 <input 
-                   id="terms" 
-                   name="terms" 
-                   type="checkbox" 
-                   required 
-                   className="mt-1 size-4 rounded border-primary text-primary focus:ring-primary cursor-pointer" 
-                 />
-                 <label htmlFor="terms" className="text-sm leading-tight cursor-pointer">
-                   <span className="font-bold flex items-center gap-1.5 mb-1"><ShieldCheck className="size-4 text-primary" /> 6. Aceptación de Términos</span>
-                   Confirmo que acepto los términos y condiciones de uso del sistema MedApp, así como las políticas de privacidad y manejo de datos clínicos sensibles conforme a la ley vigente.
-                 </label>
-               </div>
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
+                <input
+                  id="terms"
+                  name="terms"
+                  type="checkbox"
+                  required
+                  className="mt-1 size-4 rounded border-primary text-primary focus:ring-primary cursor-pointer"
+                />
+                <label htmlFor="terms" className="text-sm leading-tight cursor-pointer">
+                  <span className="font-bold flex items-center gap-1.5 mb-1">
+                    <ShieldCheck className="size-4 text-primary" /> 6. Aceptación de Términos
+                  </span>
+                  Confirmo que acepto los términos y condiciones de uso del sistema MedApp, así como
+                  las políticas de privacidad y manejo de datos clínicos sensibles conforme a la ley
+                  vigente.
+                </label>
+              </div>
             </div>
-
           </div>
 
           {error && (

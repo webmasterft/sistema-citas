@@ -3,8 +3,8 @@
  */
 export function translateError(error: any): string {
   if (!error) return "";
-  
-  const message = typeof error === 'string' ? error : error.message || "";
+
+  const message = typeof error === "string" ? error : error.message || "";
   const code = error.code || "";
 
   // Supabase RLS policies

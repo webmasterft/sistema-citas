@@ -39,7 +39,7 @@ export default function LoginPage() {
       <div className="hidden lg:flex flex-col justify-center p-12 bg-primary/5 border-r border-border/50 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full -mr-32 -mt-32 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full -ml-32 -mb-32 blur-3xl" />
-        
+
         <div className="relative z-10 max-w-md">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 bg-primary rounded-2xl shadow-lg shadow-primary/20">
@@ -49,26 +49,28 @@ export default function LoginPage() {
               MedApp <span className="text-primary">Ecuador</span>
             </h1>
           </div>
-          
+
           <h2 className="text-4xl font-extrabold text-foreground mb-6 leading-tight">
-            Gestión Médica de <br /> 
+            Gestión Médica de <br />
             <span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-blue-600">
               Siguiente Generación
             </span>
           </h2>
-          
+
           <p className="text-lg text-muted-foreground mb-12">
-            La plataforma definitiva para médicos, clínicas y hospitales en Ecuador. 
-            Seguridad cumpliendo normativas locales y diseño premium para su práctica diaria.
+            La plataforma definitiva para médicos, clínicas y hospitales en Ecuador. Seguridad
+            cumpliendo normativas locales y diseño premium para su práctica diaria.
           </p>
-          
+
           <div className="space-y-4">
-            {["Historias Clínicas SOAP", "Facturación SRI", "Recetas Electrónicas"].map((feature) => (
-              <div key={feature} className="flex items-center gap-3 text-foreground font-medium">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                {feature}
-              </div>
-            ))}
+            {["Historias Clínicas SOAP", "Facturación SRI", "Recetas Electrónicas"].map(
+              (feature) => (
+                <div key={feature} className="flex items-center gap-3 text-foreground font-medium">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                  {feature}
+                </div>
+              )
+            )}
           </div>
         </div>
       </div>
@@ -77,7 +79,7 @@ export default function LoginPage() {
       <div className="flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-sm space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="lg:hidden flex flex-col items-center mb-12">
-             <div className="p-4 bg-primary rounded-2xl shadow-lg shadow-primary/20 mb-4">
+            <div className="p-4 bg-primary rounded-2xl shadow-lg shadow-primary/20 mb-4">
               <Stethoscope className="w-10 h-10 text-primary-foreground" />
             </div>
             <h1 className="text-2xl font-bold text-foreground">MedApp Ecuador</h1>
@@ -85,13 +87,18 @@ export default function LoginPage() {
 
           <div className="space-y-2">
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Bienvenido</h2>
-            <p className="text-muted-foreground">Ingrese sus credenciales para acceder al sistema</p>
+            <p className="text-muted-foreground">
+              Ingrese sus credenciales para acceder al sistema
+            </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" htmlFor="email">
+                <label
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  htmlFor="email"
+                >
                   Usuario o Correo
                 </label>
                 <div className="relative">
@@ -107,7 +114,10 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" htmlFor="password">
+                <label
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  htmlFor="password"
+                >
                   Contraseña
                 </label>
                 <div className="relative">
@@ -134,18 +144,21 @@ export default function LoginPage() {
               disabled={loading}
               className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8 w-full shadow-lg shadow-primary/20 cursor-pointer"
             >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : null}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               {loading ? "Iniciando sesión..." : "Acceder al Sistema"}
             </button>
           </form>
 
           <p className="px-8 text-center text-sm text-muted-foreground">
             Al continuar, acepta nuestros{" "}
-            <a className="underline underline-offset-4 hover:text-primary cursor-pointer" href="#">Términos de Servicio</a>{" "}
+            <a className="underline underline-offset-4 hover:text-primary cursor-pointer" href="#">
+              Términos de Servicio
+            </a>{" "}
             y{" "}
-            <a className="underline underline-offset-4 hover:text-primary cursor-pointer" href="#">Política de Privacidad</a>.
+            <a className="underline underline-offset-4 hover:text-primary cursor-pointer" href="#">
+              Política de Privacidad
+            </a>
+            .
           </p>
         </div>
       </div>

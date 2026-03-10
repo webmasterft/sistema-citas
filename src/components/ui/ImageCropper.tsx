@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback } from 'react';
-import Cropper from 'react-easy-crop';
-import { getCroppedImg } from '@/lib/cropImage';
-import { X, Check, ZoomIn, ZoomOut } from 'lucide-react';
+import React, { useState, useCallback } from "react";
+import Cropper from "react-easy-crop";
+import { getCroppedImg } from "@/lib/cropImage";
+import { X, Check, ZoomIn, ZoomOut } from "lucide-react";
 
 interface ImageCropperProps {
   imageSrc: string;
@@ -30,7 +30,7 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
       }
     } catch (e) {
       console.error(e);
-      alert('Error al procesar la imagen.');
+      alert("Error al procesar la imagen.");
     } finally {
       setIsProcessing(false);
     }
@@ -97,7 +97,7 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
             className="px-5 py-2.5 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
           >
             <Check className="w-5 h-5" />
-            {isProcessing ? 'Procesando...' : 'Aplicar'}
+            {isProcessing ? "Procesando..." : "Aplicar"}
           </button>
         </div>
       </div>

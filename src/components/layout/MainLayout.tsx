@@ -87,9 +87,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content Area */}
       <main className="min-h-screen pt-16 lg:pl-72 lg:pt-0">
-        <div className="container mx-auto p-4 md:p-8 lg:p-10">
-          {children}
-        </div>
+        <div className="container mx-auto p-4 md:p-8 lg:p-10">{children}</div>
       </main>
     </div>
   );

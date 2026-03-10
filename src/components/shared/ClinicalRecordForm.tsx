@@ -33,12 +33,24 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
     // Signos Vitales
     const weight = formData.get("weight") ? parseFloat(formData.get("weight") as string) : null;
     const height = formData.get("height") ? parseFloat(formData.get("height") as string) : null;
-    const temperature = formData.get("temperature") ? parseFloat(formData.get("temperature") as string) : null;
-    const heart_rate = formData.get("heart_rate") ? parseInt(formData.get("heart_rate") as string) : null;
-    const respiratory_rate = formData.get("respiratory_rate") ? parseInt(formData.get("respiratory_rate") as string) : null;
-    const blood_pressure_sys = formData.get("blood_pressure_sys") ? parseInt(formData.get("blood_pressure_sys") as string) : null;
-    const blood_pressure_dia = formData.get("blood_pressure_dia") ? parseInt(formData.get("blood_pressure_dia") as string) : null;
-    const oxygen_saturation = formData.get("oxygen_saturation") ? parseInt(formData.get("oxygen_saturation") as string) : null;
+    const temperature = formData.get("temperature")
+      ? parseFloat(formData.get("temperature") as string)
+      : null;
+    const heart_rate = formData.get("heart_rate")
+      ? parseInt(formData.get("heart_rate") as string)
+      : null;
+    const respiratory_rate = formData.get("respiratory_rate")
+      ? parseInt(formData.get("respiratory_rate") as string)
+      : null;
+    const blood_pressure_sys = formData.get("blood_pressure_sys")
+      ? parseInt(formData.get("blood_pressure_sys") as string)
+      : null;
+    const blood_pressure_dia = formData.get("blood_pressure_dia")
+      ? parseInt(formData.get("blood_pressure_dia") as string)
+      : null;
+    const oxygen_saturation = formData.get("oxygen_saturation")
+      ? parseInt(formData.get("oxygen_saturation") as string)
+      : null;
 
     if (!user) {
       setError("No hay sesión activa.");
@@ -47,9 +59,8 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
     }
     const doctor_id = user.id;
 
-    const { error: submitError } = await supabase
-      .from("clinical_history")
-      .insert([{ 
+    const { error: submitError } = await supabase.from("clinical_history").insert([
+      {
         patient_id: patientId,
         doctor_id,
         subjective,
@@ -65,8 +76,9 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
         respiratory_rate,
         blood_pressure_sys,
         blood_pressure_dia,
-        oxygen_saturation
-      }]);
+        oxygen_saturation,
+      },
+    ]);
 
     if (submitError) {
       setError(translateError(submitError));
@@ -92,7 +104,12 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label htmlFor="subjective" className="text-xs font-bold uppercase text-muted-foreground">Subjetivo (S) - Motivo de consulta / Síntomas</label>
+            <label
+              htmlFor="subjective"
+              className="text-xs font-bold uppercase text-muted-foreground"
+            >
+              Subjetivo (S) - Motivo de consulta / Síntomas
+            </label>
             <textarea
               id="subjective"
               name="subjective"
@@ -104,7 +121,12 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="objective" className="text-xs font-bold uppercase text-muted-foreground">Objetivo (O) - Signos vitales / Examen físico</label>
+            <label
+              htmlFor="objective"
+              className="text-xs font-bold uppercase text-muted-foreground"
+            >
+              Objetivo (O) - Signos vitales / Examen físico
+            </label>
             <textarea
               id="objective"
               name="objective"
@@ -116,7 +138,12 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="internal_notes" className="text-xs font-bold uppercase text-muted-foreground">Análisis (A) - Diagnóstico sugerido / Notas internas</label>
+            <label
+              htmlFor="internal_notes"
+              className="text-xs font-bold uppercase text-muted-foreground"
+            >
+              Análisis (A) - Diagnóstico sugerido / Notas internas
+            </label>
             <textarea
               id="internal_notes"
               name="internal_notes"
@@ -127,7 +154,9 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="plan" className="text-xs font-bold uppercase text-muted-foreground">Plan (P) - Indicaciones / Tratamiento</label>
+            <label htmlFor="plan" className="text-xs font-bold uppercase text-muted-foreground">
+              Plan (P) - Indicaciones / Tratamiento
+            </label>
             <textarea
               id="plan"
               name="plan"
@@ -145,40 +174,103 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
             </h5>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-muted-foreground">Presión Art. (S/D)</label>
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                  Presión Art. (S/D)
+                </label>
                 <div className="flex items-center gap-1">
-                  <input type="number" name="blood_pressure_sys" placeholder="120" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+                  <input
+                    type="number"
+                    name="blood_pressure_sys"
+                    placeholder="120"
+                    className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary"
+                  />
                   <span className="text-muted-foreground">/</span>
-                  <input type="number" name="blood_pressure_dia" placeholder="80" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+                  <input
+                    type="number"
+                    name="blood_pressure_dia"
+                    placeholder="80"
+                    className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary"
+                  />
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-muted-foreground">FC (LPM)</label>
-                <input type="number" name="heart_rate" placeholder="72" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                  FC (LPM)
+                </label>
+                <input
+                  type="number"
+                  name="heart_rate"
+                  placeholder="72"
+                  className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary"
+                />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-muted-foreground">FR (RPM)</label>
-                <input type="number" name="respiratory_rate" placeholder="18" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                  FR (RPM)
+                </label>
+                <input
+                  type="number"
+                  name="respiratory_rate"
+                  placeholder="18"
+                  className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary"
+                />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-muted-foreground">Temp (°C)</label>
-                <input type="number" step="0.1" name="temperature" placeholder="36.5" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                  Temp (°C)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  name="temperature"
+                  placeholder="36.5"
+                  className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary"
+                />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-muted-foreground">SpO2 (%)</label>
-                <input type="number" name="oxygen_saturation" placeholder="98" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                  SpO2 (%)
+                </label>
+                <input
+                  type="number"
+                  name="oxygen_saturation"
+                  placeholder="98"
+                  className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary"
+                />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-muted-foreground">Peso (kg)</label>
-                <input type="number" step="0.1" name="weight" placeholder="70.5" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                  Peso (kg)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  name="weight"
+                  placeholder="70.5"
+                  className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary"
+                />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-muted-foreground">Talla (cm)</label>
-                <input type="number" name="height" placeholder="170" className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary" />
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                  Talla (cm)
+                </label>
+                <input
+                  type="number"
+                  name="height"
+                  placeholder="170"
+                  className="w-full rounded border bg-background px-2 py-1 text-xs focus:ring-1 focus:ring-primary"
+                />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-muted-foreground">IMC (Auto)</label>
-                <input type="text" readOnly placeholder="---" className="w-full rounded border bg-muted/50 px-2 py-1 text-xs text-muted-foreground" />
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                  IMC (Auto)
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  placeholder="---"
+                  className="w-full rounded border bg-muted/50 px-2 py-1 text-xs text-muted-foreground"
+                />
               </div>
             </div>
           </div>
@@ -196,12 +288,15 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
             ) : (
               <div className="space-y-2 animate-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="prescription" className="text-xs font-bold uppercase tracking-tight text-primary flex items-center gap-1.5">
+                  <label
+                    htmlFor="prescription"
+                    className="text-xs font-bold uppercase tracking-tight text-primary flex items-center gap-1.5"
+                  >
                     <FileText className="size-3" />
                     Receta Médica / Prescripción
                   </label>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setShowPrescription(false)}
                     className="text-[10px] text-destructive hover:underline font-bold uppercase"
                   >
@@ -221,7 +316,12 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="assessment_cie10" className="text-xs font-bold uppercase text-muted-foreground">Código CIE-10 (Diagnóstico Definitivo)</label>
+          <label
+            htmlFor="assessment_cie10"
+            className="text-xs font-bold uppercase text-muted-foreground"
+          >
+            Código CIE-10 (Diagnóstico Definitivo)
+          </label>
           <input
             id="assessment_cie10"
             name="assessment_cie10"
@@ -231,9 +331,7 @@ export function ClinicalRecordForm({ patientId, onClose, onSuccess }: ClinicalRe
         </div>
 
         {error && (
-          <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-xs">
-            {error}
-          </div>
+          <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-xs">{error}</div>
         )}
 
         <div className="flex justify-end gap-3 pt-4 border-t">

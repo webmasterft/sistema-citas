@@ -24,7 +24,12 @@ interface AppointmentFormProps {
   initialData?: any;
 }
 
-export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData }: AppointmentFormProps) {
+export function AppointmentForm({
+  onClose,
+  onSuccess,
+  onNewPatient,
+  initialData,
+}: AppointmentFormProps) {
   const { user, loading: authLoading, role } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,11 +62,13 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
   // Admin-only: doctor selector
   const isAdmin = role === "admin" || role === "webmaster";
   const [adminDoctors, setAdminDoctors] = useState<any[]>([]);
-  const [adminSelectedDoctorId, setAdminSelectedDoctorId] = useState<string>(initialData?.doctor_id || "");
+  const [adminSelectedDoctorId, setAdminSelectedDoctorId] = useState<string>(
+    initialData?.doctor_id || ""
+  );
   const [loadingDoctors, setLoadingDoctors] = useState(false);
 
   // The effective doctor ID: for doctors it's ALWAYS user.id, for admins it's their selection
-  const effectiveDoctorId = isAdmin ? adminSelectedDoctorId : user?.id ?? "";
+  const effectiveDoctorId = isAdmin ? adminSelectedDoctorId : (user?.id ?? "");
 
   // Fetch patients – uses effectiveDoctorId which is stable for doctors
   useEffect(() => {
@@ -154,11 +161,26 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!user) { setError("No hay una sesión activa."); return; }
-    if (!effectiveDoctorId) { setError("Seleccione un médico."); return; }
-    if (!patientId) { setError("Seleccione un paciente."); return; }
-    if (!selectedDate) { setError("Seleccione una fecha."); return; }
-    if (!selectedSlot) { setError("Seleccione un horario disponible."); return; }
+    if (!user) {
+      setError("No hay una sesión activa.");
+      return;
+    }
+    if (!effectiveDoctorId) {
+      setError("Seleccione un médico.");
+      return;
+    }
+    if (!patientId) {
+      setError("Seleccione un paciente.");
+      return;
+    }
+    if (!selectedDate) {
+      setError("Seleccione una fecha.");
+      return;
+    }
+    if (!selectedSlot) {
+      setError("Seleccione un horario disponible.");
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -212,8 +234,12 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
         {/* Header */}
         <div className="px-6 py-4 flex items-center justify-between border-b shrink-0">
           <div>
-            <h2 className="text-lg font-bold">{initialData ? "Editar Cita" : "Agendar Nueva Cita"}</h2>
-            <p className="text-xs text-muted-foreground">Complete los campos y seleccione un horario disponible.</p>
+            <h2 className="text-lg font-bold">
+              {initialData ? "Editar Cita" : "Agendar Nueva Cita"}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Complete los campos y seleccione un horario disponible.
+            </p>
           </div>
           <button
             type="button"
@@ -237,7 +263,8 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
           {isAdmin && (
             <div className="space-y-2">
               <label className="text-sm font-semibold flex items-center gap-2">
-                <Stethoscope className="size-4 text-primary" /> Médico Responsable <span className="text-destructive">*</span>
+                <Stethoscope className="size-4 text-primary" /> Médico Responsable{" "}
+                <span className="text-destructive">*</span>
               </label>
               {loadingDoctors ? (
                 <div className="h-10 w-full animate-pulse bg-muted rounded-md" />
@@ -287,7 +314,8 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
           {/* Date selector */}
           <div className="space-y-2">
             <label className="text-sm font-semibold flex items-center gap-2">
-              <CalendarDays className="size-4 text-primary" /> Fecha de la cita <span className="text-destructive">*</span>
+              <CalendarDays className="size-4 text-primary" /> Fecha de la cita{" "}
+              <span className="text-destructive">*</span>
             </label>
             <DatePicker
               selected={selectedDate ? new Date(selectedDate + "T12:00:00") : null}
@@ -346,7 +374,9 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
                       >
                         {slot.time}
                         {isBooked && (
-                          <span className="block text-[9px] leading-none mt-0.5 opacity-70">Ocupado</span>
+                          <span className="block text-[9px] leading-none mt-0.5 opacity-70">
+                            Ocupado
+                          </span>
                         )}
                       </button>
                     );
@@ -358,7 +388,9 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
 
           {/* Status */}
           <div className="space-y-2">
-            <label htmlFor="status" className="text-sm font-semibold">Estado</label>
+            <label htmlFor="status" className="text-sm font-semibold">
+              Estado
+            </label>
             <select
               id="status"
               value={status}
@@ -374,7 +406,9 @@ export function AppointmentForm({ onClose, onSuccess, onNewPatient, initialData 
 
           {/* Reason */}
           <div className="space-y-2">
-            <label htmlFor="reason" className="text-sm font-semibold">Motivo de la Cita</label>
+            <label htmlFor="reason" className="text-sm font-semibold">
+              Motivo de la Cita
+            </label>
             <textarea
               id="reason"
               value={reason}
