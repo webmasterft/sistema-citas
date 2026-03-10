@@ -39,3 +39,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Temporary test scripts and audit reports
+test_payload.js
+test_profiles.js
+diagnose_db.js
+get_data.js
+get_openapi.js
+get_schema.js
+inspect_db.js
+test_update.js
+test_update2.js
+db_data.json
+a11y-report.json
+a11y-report-new.json
+report.json
+eslint-report*.json
+server-log.txt
+check_role.js
