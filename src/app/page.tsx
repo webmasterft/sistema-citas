@@ -11,7 +11,13 @@ import { Building2, Stethoscope, Users, Clock, CalendarClock, Settings } from "l
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useSearchParams, useRouter } from "next/navigation";
 
-type TabId = "institutions" | "doctors" | "patients" | "appointments" | "schedule" | "configuracion";
+type TabId =
+  | "institutions"
+  | "doctors"
+  | "patients"
+  | "appointments"
+  | "schedule"
+  | "configuracion";
 
 export default function Home() {
   const { role, loading } = useAuth();
@@ -62,7 +68,10 @@ export default function Home() {
         <nav className="flex flex-wrap gap-4 mt-6" aria-label="Tabs de navegación">
           {isAdmin && (
             <>
-              <button onClick={() => handleTabChange("institutions")} className={tabClass("institutions")}>
+              <button
+                onClick={() => handleTabChange("institutions")}
+                className={tabClass("institutions")}
+              >
                 <Building2 className="size-4" />
                 Instituciones
               </button>
@@ -76,7 +85,10 @@ export default function Home() {
             <Users className="size-4" />
             Pacientes
           </button>
-          <button onClick={() => handleTabChange("appointments")} className={tabClass("appointments")}>
+          <button
+            onClick={() => handleTabChange("appointments")}
+            className={tabClass("appointments")}
+          >
             <Clock className="size-4" />
             Citas
           </button>
@@ -87,7 +99,10 @@ export default function Home() {
               Mi Horario
             </button>
           )}
-          <button onClick={() => handleTabChange("configuracion")} className={tabClass("configuracion")}>
+          <button
+            onClick={() => handleTabChange("configuracion")}
+            className={tabClass("configuracion")}
+          >
             <Settings className="size-4" />
             Configuración
           </button>

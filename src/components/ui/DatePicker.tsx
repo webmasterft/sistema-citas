@@ -27,7 +27,7 @@ export const DatePicker = ({
   minDate,
   maxDate,
   id,
-  required
+  required,
 }: DatePickerProps) => {
   const CustomInput = forwardRef<HTMLButtonElement, any>(({ value, onClick }, ref) => (
     <button

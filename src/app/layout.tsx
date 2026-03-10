@@ -20,9 +20,7 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${manrope.className} min-h-screen antialiased`}>
         <AuthProvider>
-          <MainLayout>
-            {children}
-          </MainLayout>
+          <MainLayout>{children}</MainLayout>
         </AuthProvider>
       </body>
     </html>

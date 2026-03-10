@@ -26,12 +26,12 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser]       = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [role, setRole]       = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const router   = useRouter();
+  const router = useRouter();
   const pathname = usePathname();
   // Prevent double-initialization in React Strict Mode / double renders
   const initialized = useRef(false);
@@ -102,14 +102,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // 2. Listen for subsequent changes (sign-in, sign-out, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
-        if (!mounted) return;
-        await applySession(newSession);
-        setLoading(false);
-        clearTimeout(failsafe);
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      if (!mounted) return;
+      await applySession(newSession);
+      setLoading(false);
+      clearTimeout(failsafe);
+    });
 
     return () => {
       mounted = false;
@@ -141,17 +141,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (user) {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
+      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
       if (data) setProfile(data);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider
+      value={{ user, session, role, profile, loading, signOut, refreshProfile }}
+    >
       {children}
     </AuthContext.Provider>
   );

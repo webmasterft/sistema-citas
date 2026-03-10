@@ -94,7 +94,7 @@ export async function createAppointment(payload: any) {
                 © ${new Date().getFullYear()} Sistema de Gestión de Citas Médicas
               </div>
             </div>
-          `
+          `,
         });
       } catch (emailError) {
         console.error("Error sending email:", emailError);

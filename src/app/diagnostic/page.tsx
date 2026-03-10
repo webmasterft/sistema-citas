@@ -36,7 +36,9 @@ export default function DiagnosticPage() {
         .select("id, role, full_name")
         .eq("id", user!.id)
         .maybeSingle();
-      log(`   ⏱️ ${Date.now() - t1Start}ms — ${profileErr ? `❌ Error: ${profileErr.message}` : `✅ Profile: ${JSON.stringify(profile)}`}`);
+      log(
+        `   ⏱️ ${Date.now() - t1Start}ms — ${profileErr ? `❌ Error: ${profileErr.message}` : `✅ Profile: ${JSON.stringify(profile)}`}`
+      );
 
       // Test 2: Patients query
       log("🔍 Test 2: Querying patients with doctor_id filter...");
@@ -46,7 +48,9 @@ export default function DiagnosticPage() {
         .select("id, first_name, last_name")
         .eq("doctor_id", user!.id)
         .limit(5);
-      log(`   ⏱️ ${Date.now() - t2Start}ms — ${patientsErr ? `❌ Error: ${patientsErr.message}` : `✅ Patients: ${patients?.length} found — ${JSON.stringify(patients)}`}`);
+      log(
+        `   ⏱️ ${Date.now() - t2Start}ms — ${patientsErr ? `❌ Error: ${patientsErr.message}` : `✅ Patients: ${patients?.length} found — ${JSON.stringify(patients)}`}`
+      );
 
       // Test 3: Doctor schedules
       log("🔍 Test 3: Querying doctor_schedules...");
@@ -55,7 +59,9 @@ export default function DiagnosticPage() {
         .from("doctor_schedules" as any)
         .select("day_of_week, is_active, start_time, end_time")
         .eq("doctor_id", user!.id);
-      log(`   ⏱️ ${Date.now() - t3Start}ms — ${schedErr ? `❌ Error: ${(schedErr as any).message}` : `✅ Schedules: ${(schedules as any)?.length} found`}`);
+      log(
+        `   ⏱️ ${Date.now() - t3Start}ms — ${schedErr ? `❌ Error: ${(schedErr as any).message}` : `✅ Schedules: ${(schedules as any)?.length} found`}`
+      );
 
       // Test 4: Appointments query
       log("🔍 Test 4: Querying appointments...");
@@ -65,7 +71,9 @@ export default function DiagnosticPage() {
         .select("id, start_time, status")
         .eq("doctor_id", user!.id)
         .limit(5);
-      log(`   ⏱️ ${Date.now() - t4Start}ms — ${apptErr ? `❌ Error: ${apptErr.message}` : `✅ Appointments: ${appts?.length} found`}`);
+      log(
+        `   ⏱️ ${Date.now() - t4Start}ms — ${apptErr ? `❌ Error: ${apptErr.message}` : `✅ Appointments: ${appts?.length} found`}`
+      );
 
       log("🏁 All tests complete.");
     }
@@ -84,7 +92,16 @@ export default function DiagnosticPage() {
           <p className="text-muted-foreground animate-pulse">Running diagnostics...</p>
         )}
         {results.map((r, i) => (
-          <p key={i} className={r.includes("❌") ? "text-red-400" : r.includes("✅") ? "text-green-400" : "text-foreground"}>
+          <p
+            key={i}
+            className={
+              r.includes("❌")
+                ? "text-red-400"
+                : r.includes("✅")
+                  ? "text-green-400"
+                  : "text-foreground"
+            }
+          >
             {r}
           </p>
         ))}

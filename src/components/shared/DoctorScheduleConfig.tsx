@@ -47,7 +47,10 @@ export function DoctorScheduleConfig() {
   const [savedMsg, setSavedMsg] = useState(false);
 
   const fetchSchedule = useCallback(async () => {
-    if (!user) { setLoading(false); return; }
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     try {
       const { data } = await supabase
         .from("doctor_schedules" as any)
@@ -57,9 +60,7 @@ export function DoctorScheduleConfig() {
       if (data && data.length > 0) {
         setSchedules((prev) =>
           prev.map((s) => {
-            const found = (data as any[]).find(
-              (d) => d.day_of_week === s.day_of_week
-            );
+            const found = (data as any[]).find((d) => d.day_of_week === s.day_of_week);
             return found
               ? {
                   day_of_week: found.day_of_week,
@@ -88,15 +89,9 @@ export function DoctorScheduleConfig() {
     fetchSchedule();
   }, [fetchSchedule, user, authLoading]);
 
-  const handleChange = (
-    dayOfWeek: number,
-    field: keyof DaySchedule,
-    value: any
-  ) => {
+  const handleChange = (dayOfWeek: number, field: keyof DaySchedule, value: any) => {
     setSchedules((prev) =>
-      prev.map((s) =>
-        s.day_of_week === dayOfWeek ? { ...s, [field]: value } : s
-      )
+      prev.map((s) => (s.day_of_week === dayOfWeek ? { ...s, [field]: value } : s))
     );
   };
 
@@ -148,7 +143,8 @@ export function DoctorScheduleConfig() {
             Horario de Atención
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure los días y horas en que atiende. Los slots de citas se generarán automáticamente.
+            Configure los días y horas en que atiende. Los slots de citas se generarán
+            automáticamente.
           </p>
         </div>
         <button
@@ -156,11 +152,7 @@ export function DoctorScheduleConfig() {
           disabled={saving}
           className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer disabled:opacity-50"
         >
-          {saving ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Save className="size-4" />
-          )}
+          {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
           {savedMsg ? "¡Guardado!" : "Guardar Horario"}
         </button>
       </div>
@@ -189,9 +181,7 @@ export function DoctorScheduleConfig() {
                   <button
                     role="switch"
                     aria-checked={sched.is_active}
-                    onClick={() =>
-                      handleChange(sched.day_of_week, "is_active", !sched.is_active)
-                    }
+                    onClick={() => handleChange(sched.day_of_week, "is_active", !sched.is_active)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       sched.is_active ? "bg-primary" : "bg-muted"
                     }`}
@@ -209,9 +199,7 @@ export function DoctorScheduleConfig() {
                   value={sched.start_time}
                   disabled={!sched.is_active}
                   step="60"
-                  onChange={(e) =>
-                    handleChange(sched.day_of_week, "start_time", e.target.value)
-                  }
+                  onChange={(e) => handleChange(sched.day_of_week, "start_time", e.target.value)}
                   className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
                 />
 
@@ -220,9 +208,7 @@ export function DoctorScheduleConfig() {
                   value={sched.end_time}
                   disabled={!sched.is_active}
                   step="60"
-                  onChange={(e) =>
-                    handleChange(sched.day_of_week, "end_time", e.target.value)
-                  }
+                  onChange={(e) => handleChange(sched.day_of_week, "end_time", e.target.value)}
                   className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
                 />
 
@@ -230,11 +216,7 @@ export function DoctorScheduleConfig() {
                   value={sched.slot_duration}
                   disabled={!sched.is_active}
                   onChange={(e) =>
-                    handleChange(
-                      sched.day_of_week,
-                      "slot_duration",
-                      Number(e.target.value)
-                    )
+                    handleChange(sched.day_of_week, "slot_duration", Number(e.target.value))
                   }
                   className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
                 >

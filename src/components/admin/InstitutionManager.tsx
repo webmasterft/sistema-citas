@@ -34,11 +34,8 @@ export function InstitutionManager() {
   const fetchInstitutions = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("institutions")
-        .select("*")
-        .order("name");
-      
+      const { data, error } = await supabase.from("institutions").select("*").order("name");
+
       if (!error && data) {
         setInstitutions(data);
       }
@@ -73,7 +70,7 @@ export function InstitutionManager() {
         {showSlowNetwork && (
           <div className="mt-4 p-4 border border-destructive/20 bg-destructive/10 rounded-lg max-w-md text-sm text-left">
             <p className="font-semibold text-destructive mb-2">Parece que la conexión se atascó.</p>
-            <button 
+            <button
               onClick={() => {
                 localStorage.clear();
                 window.location.reload();
@@ -93,9 +90,11 @@ export function InstitutionManager() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Instituciones</h2>
-          <p className="text-muted-foreground">Administra las clínicas y centros médicos del sistema.</p>
+          <p className="text-muted-foreground">
+            Administra las clínicas y centros médicos del sistema.
+          </p>
         </div>
-        <button 
+        <button
           onClick={() => {
             setEditingInstitution(null);
             setIsFormOpen(true);
@@ -108,12 +107,12 @@ export function InstitutionManager() {
       </div>
 
       {isFormOpen && (
-        <InstitutionForm 
+        <InstitutionForm
           onClose={() => {
             setIsFormOpen(false);
             setEditingInstitution(null);
-          }} 
-          onSuccess={fetchInstitutions} 
+          }}
+          onSuccess={fetchInstitutions}
           initialData={editingInstitution}
         />
       )}
@@ -123,29 +122,34 @@ export function InstitutionManager() {
           <div className="col-span-full rounded-xl border border-dashed p-12 text-center bg-card/50">
             <Building2 className="mx-auto size-12 text-muted-foreground/50" />
             <h3 className="mt-4 text-lg font-semibold">No hay instituciones</h3>
-            <p className="text-muted-foreground text-sm">Comienza creando la primera institución para los médicos.</p>
+            <p className="text-muted-foreground text-sm">
+              Comienza creando la primera institución para los médicos.
+            </p>
           </div>
         ) : (
           institutions.map((inst) => (
-            <article key={inst.id} className="rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/50 group">
+            <article
+              key={inst.id}
+              className="rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-primary/50 group"
+            >
               <div className="flex items-start justify-between">
                 <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                   <Building2 className="size-6" />
                 </div>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={() => {
                       setEditingInstitution(inst);
                       setIsFormOpen(true);
                     }}
-                    className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer" 
+                    className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer"
                     aria-label="Editar"
                   >
                     <Pencil className="size-4" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleDelete(inst.id, inst.name)}
-                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer" 
+                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer"
                     aria-label="Eliminar"
                   >
                     <Trash2 className="size-4" />

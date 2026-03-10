@@ -58,42 +58,42 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
       if (initialData?.id) {
         const { error: submitError } = await supabase
           .from("patients")
-          .update({ 
+          .update({
             first_name,
             last_name,
-            id_number, 
-            birth_date: birth_date_val, 
-            gender, 
-            phone, 
-            email, 
+            id_number,
+            birth_date: birth_date_val,
+            gender,
+            phone,
+            email,
             address,
             physical_illnesses,
             allergies,
             family_history,
             surgical_history,
-            medications
+            medications,
           })
           .eq("id", initialData.id);
         if (submitError) throw submitError;
       } else {
-        const { error: submitError } = await supabase
-          .from("patients")
-          .insert([{ 
+        const { error: submitError } = await supabase.from("patients").insert([
+          {
             first_name,
             last_name,
-            id_number, 
-            birth_date: birth_date_val, 
-            gender, 
-            phone, 
-            email, 
+            id_number,
+            birth_date: birth_date_val,
+            gender,
+            phone,
+            email,
             address,
             doctor_id: user.id,
             physical_illnesses,
             allergies,
             family_history,
             surgical_history,
-            medications
-          }]);
+            medications,
+          },
+        ]);
         if (submitError) throw submitError;
       }
 
@@ -110,8 +110,14 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <article className="w-full max-w-2xl rounded-xl bg-card p-6 shadow-xl border animate-in fade-in zoom-in duration-200 overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold">{initialData ? "Editar Paciente" : "Registro de Paciente"}</h3>
-          <button onClick={onClose} className="p-1 hover:bg-accent rounded-full" aria-label="Cerrar">
+          <h3 className="text-2xl font-bold">
+            {initialData ? "Editar Paciente" : "Registro de Paciente"}
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-accent rounded-full"
+            aria-label="Cerrar"
+          >
             <X className="size-5" />
           </button>
         </div>
@@ -119,7 +125,9 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="grid grid-cols-2 gap-4 md:col-span-2">
             <div className="space-y-2">
-              <label htmlFor="first_name_1" className="text-sm font-medium text-foreground">Primer Nombre *</label>
+              <label htmlFor="first_name_1" className="text-sm font-medium text-foreground">
+                Primer Nombre *
+              </label>
               <input
                 id="first_name_1"
                 name="first_name_1"
@@ -131,7 +139,9 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="first_name_2" className="text-sm font-medium text-foreground">Segundo Nombre</label>
+              <label htmlFor="first_name_2" className="text-sm font-medium text-foreground">
+                Segundo Nombre
+              </label>
               <input
                 id="first_name_2"
                 name="first_name_2"
@@ -144,7 +154,9 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
 
           <div className="grid grid-cols-2 gap-4 md:col-span-2">
             <div className="space-y-2">
-              <label htmlFor="last_name_1" className="text-sm font-medium text-foreground">Apellido Paterno *</label>
+              <label htmlFor="last_name_1" className="text-sm font-medium text-foreground">
+                Apellido Paterno *
+              </label>
               <input
                 id="last_name_1"
                 name="last_name_1"
@@ -156,7 +168,9 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="last_name_2" className="text-sm font-medium text-foreground">Apellido Materno</label>
+              <label htmlFor="last_name_2" className="text-sm font-medium text-foreground">
+                Apellido Materno
+              </label>
               <input
                 id="last_name_2"
                 name="last_name_2"
@@ -168,7 +182,9 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="id_number" className="text-sm font-medium text-foreground">Cédula / Pasaporte</label>
+            <label htmlFor="id_number" className="text-sm font-medium text-foreground">
+              Cédula / Pasaporte
+            </label>
             <input
               id="id_number"
               name="id_number"
@@ -180,7 +196,9 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="birth_date" className="text-sm font-medium text-foreground">Fecha de Nacimiento</label>
+            <label htmlFor="birth_date" className="text-sm font-medium text-foreground">
+              Fecha de Nacimiento
+            </label>
             <DatePicker
               id="birth_date"
               selected={birthDate}
@@ -191,7 +209,9 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="gender" className="text-sm font-medium text-foreground">Sexo</label>
+            <label htmlFor="gender" className="text-sm font-medium text-foreground">
+              Sexo
+            </label>
             <select
               id="gender"
               name="gender"
@@ -205,7 +225,9 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="phone" className="text-sm font-medium text-foreground">Teléfono</label>
+            <label htmlFor="phone" className="text-sm font-medium text-foreground">
+              Teléfono
+            </label>
             <input
               id="phone"
               name="phone"
@@ -217,7 +239,9 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <label htmlFor="email" className="text-sm font-medium text-foreground">Email</label>
+            <label htmlFor="email" className="text-sm font-medium text-foreground">
+              Email
+            </label>
             <input
               id="email"
               name="email"
@@ -229,7 +253,9 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <label htmlFor="address" className="text-sm font-medium text-foreground">Dirección de Domicilio</label>
+            <label htmlFor="address" className="text-sm font-medium text-foreground">
+              Dirección de Domicilio
+            </label>
             <textarea
               id="address"
               name="address"
@@ -244,7 +270,12 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
             <h4 className="text-sm font-bold text-primary mb-4">Antecedentes Médicos</h4>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="physical_illnesses" className="text-xs font-bold uppercase text-muted-foreground">Enfermedades Físicas / Crónicas</label>
+                <label
+                  htmlFor="physical_illnesses"
+                  className="text-xs font-bold uppercase text-muted-foreground"
+                >
+                  Enfermedades Físicas / Crónicas
+                </label>
                 <textarea
                   id="physical_illnesses"
                   name="physical_illnesses"
@@ -255,7 +286,12 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="allergies" className="text-xs font-bold uppercase text-muted-foreground">Alergias</label>
+                <label
+                  htmlFor="allergies"
+                  className="text-xs font-bold uppercase text-muted-foreground"
+                >
+                  Alergias
+                </label>
                 <textarea
                   id="allergies"
                   name="allergies"
@@ -266,7 +302,12 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="family_history" className="text-xs font-bold uppercase text-muted-foreground">Antecedentes Familiares</label>
+                <label
+                  htmlFor="family_history"
+                  className="text-xs font-bold uppercase text-muted-foreground"
+                >
+                  Antecedentes Familiares
+                </label>
                 <textarea
                   id="family_history"
                   name="family_history"
@@ -277,7 +318,12 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="surgical_history" className="text-xs font-bold uppercase text-muted-foreground">Antecedentes Quirúrgicos</label>
+                <label
+                  htmlFor="surgical_history"
+                  className="text-xs font-bold uppercase text-muted-foreground"
+                >
+                  Antecedentes Quirúrgicos
+                </label>
                 <textarea
                   id="surgical_history"
                   name="surgical_history"
@@ -288,7 +334,12 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="medications" className="text-xs font-bold uppercase text-muted-foreground">Medicación Actual</label>
+                <label
+                  htmlFor="medications"
+                  className="text-xs font-bold uppercase text-muted-foreground"
+                >
+                  Medicación Actual
+                </label>
                 <textarea
                   id="medications"
                   name="medications"

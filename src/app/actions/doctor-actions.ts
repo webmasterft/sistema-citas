@@ -20,7 +20,12 @@ interface DoctorData {
 /**
  * Acción de servidor para crear una cuenta de médico de forma administrativa
  */
-export async function createDoctorAccount(email: string, password: string, fullName: string, initialData: Partial<DoctorData> = {}) {
+export async function createDoctorAccount(
+  email: string,
+  password: string,
+  fullName: string,
+  initialData: Partial<DoctorData> = {}
+) {
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -32,31 +37,29 @@ export async function createDoctorAccount(email: string, password: string, fullN
       email,
       password,
       email_confirm: true,
-      user_metadata: { 
-        full_name: fullName, 
-        role: 'doctor',
-        avatar_url: initialData.avatarUrl 
-      }
+      user_metadata: {
+        full_name: fullName,
+        role: "doctor",
+        avatar_url: initialData.avatarUrl,
+      },
     });
 
     if (authError) throw authError;
 
-    const { error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .upsert({
-        id: authData.user.id,
-        full_name: fullName,
-        role: 'doctor',
-        avatar_url: initialData.avatarUrl || null,
-        specialty: initialData.specialty || null,
-        license_number: initialData.licenseNumber || null,
-        phone: initialData.phone || null,
-        address: initialData.address || null,
-        birth_date: initialData.birthDate || null,
-        experience_years: initialData.experienceYears || null,
-        ruc: initialData.ruc || null,
-        institution_id: initialData.institutionId || null
-      });
+    const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
+      id: authData.user.id,
+      full_name: fullName,
+      role: "doctor",
+      avatar_url: initialData.avatarUrl || null,
+      specialty: initialData.specialty || null,
+      license_number: initialData.licenseNumber || null,
+      phone: initialData.phone || null,
+      address: initialData.address || null,
+      birth_date: initialData.birthDate || null,
+      experience_years: initialData.experienceYears || null,
+      ruc: initialData.ruc || null,
+      institution_id: initialData.institutionId || null,
+    });
 
     if (profileError) throw profileError;
 
@@ -81,11 +84,11 @@ export async function updateDoctorAccount(userId: string, data: DoctorData) {
       updateData.email_confirm = true;
     }
     if (data.password) updateData.password = data.password;
-    
-    updateData.user_metadata = { 
+
+    updateData.user_metadata = {
       full_name: data.fullName,
       avatar_url: data.avatarUrl,
-      role: 'doctor'
+      role: "doctor",
     };
 
     const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, updateData);
@@ -101,17 +104,19 @@ export async function updateDoctorAccount(userId: string, data: DoctorData) {
       birth_date: data.birthDate,
       experience_years: data.experienceYears,
       ruc: data.ruc,
-      institution_id: data.institutionId
+      institution_id: data.institutionId,
     };
 
     // Remove undefined values
-    Object.keys(profileUpdates).forEach(key => profileUpdates[key] === undefined && delete profileUpdates[key]);
+    Object.keys(profileUpdates).forEach(
+      (key) => profileUpdates[key] === undefined && delete profileUpdates[key]
+    );
 
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .update(profileUpdates)
       .eq("id", userId);
-    
+
     if (profileError) throw profileError;
 
     return { success: true };
@@ -136,7 +141,7 @@ export async function upsertDoctorDirectory(id: string | null, payload: any) {
         .update(payload)
         .eq("id", id)
         .select();
-        
+
       if (error) throw error;
       return { success: true, data };
     } else {
@@ -145,7 +150,7 @@ export async function upsertDoctorDirectory(id: string | null, payload: any) {
         .from("doctors_directory" as any)
         .insert([payload])
         .select();
-        
+
       if (error) throw error;
       return { success: true, data };
     }
@@ -167,7 +172,7 @@ export async function getDoctorsAndAvatars() {
       .from("doctors_directory" as any)
       .select("*")
       .order("full_name");
-      
+
     if (doctorsError) throw doctorsError;
 
     const { data: profilesData, error: profilesError } = await supabaseAdmin
@@ -180,7 +185,7 @@ export async function getDoctorsAndAvatars() {
       const profile = profilesData?.find((p: any) => p.id === doc.auth_user_id);
       return {
         ...doc,
-        avatar_url: profile?.avatar_url || null
+        avatar_url: profile?.avatar_url || null,
       };
     });
 

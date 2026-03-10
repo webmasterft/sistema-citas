@@ -28,7 +28,7 @@ export function SearchableSelect({
   searchPlaceholder = "Buscar...",
   emptyMessage = "No se encontraron resultados",
   className = "",
-  id
+  id,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -37,14 +37,12 @@ export function SearchableSelect({
 
   const selectedOption = options.find((opt) => opt.id === value);
 
-  const filteredOptions = options.filter(
-    (opt) => {
-      const searchTerms = search.toLowerCase();
-      const labelMatch = (opt.label || "").toLowerCase().includes(searchTerms);
-      const subLabelMatch = (opt.subLabel || "").toLowerCase().includes(searchTerms);
-      return labelMatch || subLabelMatch;
-    }
-  );
+  const filteredOptions = options.filter((opt) => {
+    const searchTerms = search.toLowerCase();
+    const labelMatch = (opt.label || "").toLowerCase().includes(searchTerms);
+    const subLabelMatch = (opt.subLabel || "").toLowerCase().includes(searchTerms);
+    return labelMatch || subLabelMatch;
+  });
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -77,14 +75,18 @@ export function SearchableSelect({
         className="flex h-[42px] w-full items-center justify-between rounded-[6px] border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm ring-offset-background placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer transition-colors"
       >
         <div className="flex flex-col items-start truncate overflow-hidden pointer-events-none">
-        <span className={selectedOption ? "text-slate-800 font-medium" : "text-slate-400"}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
-        {selectedOption?.subLabel && (
-          <span className="text-[10px] text-slate-500 leading-none">{selectedOption.subLabel}</span>
-        )}
+          <span className={selectedOption ? "text-slate-800 font-medium" : "text-slate-400"}>
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
+          {selectedOption?.subLabel && (
+            <span className="text-[10px] text-slate-500 leading-none">
+              {selectedOption.subLabel}
+            </span>
+          )}
         </div>
-        <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown
+          className={`h-4 w-4 opacity-50 transition-transform ${isOpen ? "rotate-180" : ""}`}
+        />
       </button>
 
       {isOpen && (
