@@ -56,44 +56,54 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
 
     try {
       if (initialData?.id) {
-        const { error: submitError } = await supabase
-          .from("patients")
-          .update({
-            first_name,
-            last_name,
-            id_number,
-            birth_date: birth_date_val,
-            gender,
-            phone,
-            email,
-            address,
-            physical_illnesses,
-            allergies,
-            family_history,
-            surgical_history,
-            medications,
-          })
-          .eq("id", initialData.id);
+        const { error: submitError } = await Promise.race([
+          supabase
+            .from("patients")
+            .update({
+              first_name,
+              last_name,
+              id_number,
+              birth_date: birth_date_val,
+              gender,
+              phone,
+              email,
+              address,
+              physical_illnesses,
+              allergies,
+              family_history,
+              surgical_history,
+              medications,
+            })
+            .eq("id", initialData.id),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("La operación tardó demasiado. Por favor reintente.")), 15000)
+          ),
+        ]) as any;
         if (submitError) throw submitError;
       } else {
-        const { error: submitError } = await supabase.from("patients").insert([
-          {
-            first_name,
-            last_name,
-            id_number,
-            birth_date: birth_date_val,
-            gender,
-            phone,
-            email,
-            address,
-            doctor_id: user.id,
-            physical_illnesses,
-            allergies,
-            family_history,
-            surgical_history,
-            medications,
-          },
-        ]);
+        const { error: submitError } = await Promise.race([
+          supabase.from("patients").insert([
+            {
+              first_name,
+              last_name,
+              id_number,
+              birth_date: birth_date_val,
+              gender,
+              phone,
+              email,
+              address,
+              doctor_id: user.id,
+              physical_illnesses,
+              allergies,
+              family_history,
+              surgical_history,
+              medications,
+            },
+          ]),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("La operación tardó demasiado. Por favor reintente.")), 15000)
+          ),
+        ]) as any;
         if (submitError) throw submitError;
       }
 

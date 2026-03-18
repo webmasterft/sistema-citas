@@ -52,52 +52,58 @@ export async function createAppointment(payload: any) {
         const formattedDate = format(dateObj, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
         const formattedTime = format(dateObj, "HH:mm");
 
-        await resend.emails.send({
-          from: "Sistema de Citas <onboarding@resend.dev>",
-          to: patient.email,
-          subject: "Confirmación de su Cita Médica",
-          html: `
-            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-              <div style="background-color: #0ea5e9; padding: 40px 20px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">CITA CONFIRMADA</h1>
-              </div>
-              <div style="padding: 32px; line-height: 1.6; color: #1e293b; background-color: #ffffff;">
-                <p style="font-size: 18px;">Hola <strong>${patient.first_name} ${patient.last_name}</strong>,</p>
-                <p>Nos complace informarle que su cita ha sido agendada exitosamente. Aquí tiene los detalles de su visita:</p>
-                
-                <div style="background-color: #f8fafc; padding: 24px; border-radius: 12px; border: 1px solid #f1f5f9; margin: 24px 0;">
-                  <div style="margin-bottom: 12px;">
-                    <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 4px;">Médico</span>
-                    <span style="font-size: 16px; font-weight: 600; color: #0ea5e9;">Dr. ${doctor.full_name}</span>
-                  </div>
-                  <div style="margin-bottom: 12px;">
-                    <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 4px;">Especialidad</span>
-                    <span style="font-size: 16px; font-weight: 600;">${doctor.specialty}</span>
-                  </div>
-                  <div style="margin-bottom: 12px;">
-                    <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 4px;">Fecha</span>
-                    <span style="font-size: 16px; font-weight: 600;">${formattedDate}</span>
-                  </div>
-                  <div>
-                    <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 4px;">Hora</span>
-                    <span style="font-size: 16px; font-weight: 600;">${formattedTime}</span>
-                  </div>
+        // Use a timeout for the email sending to avoid hanging the entire action
+        await Promise.race([
+          resend.emails.send({
+            from: "Sistema de Citas <onboarding@resend.dev>",
+            to: patient.email,
+            subject: "Confirmación de su Cita Médica",
+            html: `
+              <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                <div style="background-color: #0ea5e9; padding: 40px 20px; text-align: center; color: white;">
+                  <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em;">CITA CONFIRMADA</h1>
                 </div>
-                
-                <p style="margin-top: 24px;">Si necesita cancelar o reprogramar su cita, por favor contáctenos con al menos 24 horas de anticipación.</p>
-                
-                <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 32px 0;" />
-                
-                <p style="font-size: 13px; color: #94a3b8; text-align: center;">Este es un mensaje automático, por favor no responda a este correo.</p>
+                <div style="padding: 32px; line-height: 1.6; color: #1e293b; background-color: #ffffff;">
+                  <p style="font-size: 18px;">Hola <strong>${patient.first_name} ${patient.last_name}</strong>,</p>
+                  <p>Nos complace informarle que su cita ha sido agendada exitosamente. Aquí tiene los detalles de su visita:</p>
+                  
+                  <div style="background-color: #f8fafc; padding: 24px; border-radius: 12px; border: 1px solid #f1f5f9; margin: 24px 0;">
+                    <div style="margin-bottom: 12px;">
+                      <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 4px;">Médico</span>
+                      <span style="font-size: 16px; font-weight: 600; color: #0ea5e9;">Dr. ${doctor.full_name}</span>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                      <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 4px;">Especialidad</span>
+                      <span style="font-size: 16px; font-weight: 600;">${doctor.specialty}</span>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                      <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 4px;">Fecha</span>
+                      <span style="font-size: 16px; font-weight: 600;">${formattedDate}</span>
+                    </div>
+                    <div>
+                      <span style="color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 4px;">Hora</span>
+                      <span style="font-size: 16px; font-weight: 600;">${formattedTime}</span>
+                    </div>
+                  </div>
+                  
+                  <p style="margin-top: 24px;">Si necesita cancelar o reprogramar su cita, por favor contáctenos con al menos 24 horas de anticipación.</p>
+                  
+                  <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 32px 0;" />
+                  
+                  <p style="font-size: 13px; color: #94a3b8; text-align: center;">Este es un mensaje automático, por favor no responda a este correo.</p>
+                </div>
+                <div style="background-color: #f1f5f9; padding: 16px; text-align: center; font-size: 12px; color: #64748b;">
+                  © ${new Date().getFullYear()} Sistema de Gestión de Citas Médicas
+                </div>
               </div>
-              <div style="background-color: #f1f5f9; padding: 16px; text-align: center; font-size: 12px; color: #64748b;">
-                © ${new Date().getFullYear()} Sistema de Gestión de Citas Médicas
-              </div>
-            </div>
-          `,
-        });
+            `,
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Resend timeout")), 5000)
+          ),
+        ]);
       } catch (emailError) {
-        console.error("Error sending email:", emailError);
+        console.error("Error sending email (or timeout):", emailError);
         // We don't throw here to avoid failing the appointment creation if only email fails
       }
     }
