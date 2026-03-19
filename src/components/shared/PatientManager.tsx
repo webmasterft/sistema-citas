@@ -3,10 +3,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Tables } from "@/types/database";
-import { Plus, Users, Pencil, History, Search, Trash2 } from "lucide-react";
+import { Plus, Users, Pencil, History, Search, Trash2, RefreshCw, UserCheck, UserX } from "lucide-react";
 import { PatientForm } from "./PatientForm";
 import { ClinicalRecordManager } from "./ClinicalRecordManager";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { togglePatientActive } from "@/app/actions/patient-actions";
+import { useRef } from "react";
 
 export function PatientManager() {
   const { user, role, loading: authLoading } = useAuth();
@@ -19,8 +21,17 @@ export function PatientManager() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPatientForHistory, setSelectedPatientForHistory] =
     useState<Tables<"patients"> | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
+  const [isConfirmingAction, setIsConfirmingAction] = useState<Tables<"patients"> | null>(null);
   const [showSlowNetwork, setShowSlowNetwork] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isConfirmingAction && cancelRef.current) {
+      cancelRef.current.focus();
+    }
+  }, [isConfirmingAction]);
 
   useEffect(() => {
     let timer1: NodeJS.Timeout;
@@ -49,9 +60,19 @@ export function PatientManager() {
   const fetchPatients = useCallback(async () => {
     try {
       setLoading(true);
-      console.log("Fetching patients for user:", user?.id, "with role:", role);
+      console.log("Fetching patients for user:", user?.id, "with role:", role, "showInactive:", showInactive);
 
-      let query = supabase.from("patients").select("*").order("last_name");
+      let query = supabase.from("patients").select("*");
+
+      // Filtrar por estado activo/inactivo - handling potential nulls
+      if (showInactive) {
+        query = query.eq("is_active", false);
+      } else {
+        // Patients that are NOT is_active = false (includes true and null just in case)
+        query = query.or("is_active.is.null,is_active.eq.true");
+      }
+      
+      query = query.order("last_name");
 
       // Solo filtrar si NO es administrador
       const isAdmin = role === "admin";
@@ -71,11 +92,12 @@ export function PatientManager() {
       const { data, error } = await query;
 
       if (!error && data) {
+        console.log("Patients fetched successfully:", data.length, "rows");
         setPatients(data);
         setError(null);
       } else if (error) {
         console.error("Supabase Error fetching patients:", error);
-        setError("Error al cargar pacientes: " + error.message);
+        setError(`Error al cargar pacientes (${error.code}): ${error.message}`);
       }
     } catch (err: any) {
       console.error("Fetch patients error:", err);
@@ -83,7 +105,7 @@ export function PatientManager() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, isDoctor, user]);
+  }, [searchQuery, isDoctor, user, showInactive, role]);
 
   useEffect(() => {
     if (authLoading) return; // wait for auth to settle
@@ -96,15 +118,23 @@ export function PatientManager() {
     fetchPatients();
   }, [fetchPatients, user, authLoading]);
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`¿Estás seguro de eliminar al paciente "${name}"?`)) return;
+  const handleToggleActive = async () => {
+    if (!isConfirmingAction) return;
+    
     try {
-      const { error } = await supabase.from("patients").delete().eq("id", id);
-      if (error) throw error;
+      setLoading(true);
+      const newStatus = !isConfirmingAction.is_active;
+      const result = await togglePatientActive(isConfirmingAction.id, newStatus);
+      
+      if (!result.success) throw new Error(result.error);
+      
+      setIsConfirmingAction(null);
       fetchPatients();
     } catch (err) {
-      console.error("Delete error:", err);
-      alert("No se pudo eliminar al paciente.");
+      console.error("Toggle active error:", err);
+      alert("No se pudo cambiar el estado del paciente.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -129,15 +159,42 @@ export function PatientManager() {
         </button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-        <input
-          type="search"
-          placeholder="Buscar paciente por nombre o identificación..."
-          className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <input
+            type="search"
+            placeholder="Buscar paciente por nombre o identificación..."
+            className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        
+        <div className="flex p-1 bg-muted rounded-lg w-fit self-end sm:self-auto">
+          <button
+            onClick={() => setShowInactive(false)}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
+              !showInactive 
+                ? "bg-background text-foreground shadow-sm" 
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <UserCheck className="size-4" />
+            Activos
+          </button>
+          <button
+            onClick={() => setShowInactive(true)}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
+              showInactive 
+                ? "bg-background text-foreground shadow-sm" 
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <UserX className="size-4" />
+            Inactivos
+          </button>
+        </div>
       </div>
 
       {isFormOpen && (
@@ -239,18 +296,22 @@ export function PatientManager() {
                           >
                             <Pencil className="size-4" />
                           </button>
-                          {(role === "admin" || role === "webmaster") && (
+                          {(role === "admin" || role === "webmaster" || role === "doctor") && (
                             <button
-                              onClick={() =>
-                                handleDelete(
-                                  patient.id,
-                                  `${patient.first_name} ${patient.last_name}`
-                                )
-                              }
-                              className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer"
-                              aria-label="Eliminar"
+                              onClick={() => setIsConfirmingAction(patient)}
+                              className={`p-2 rounded-md transition-colors cursor-pointer ${
+                                patient.is_active
+                                  ? "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  : "text-primary hover:bg-primary/10"
+                              }`}
+                              title={patient.is_active ? "Inactivar" : "Reactivar"}
+                              aria-label={patient.is_active ? "Inactivar" : "Reactivar"}
                             >
-                              <Trash2 className="size-4" />
+                              {patient.is_active ? (
+                                <Trash2 className="size-4" />
+                              ) : (
+                                <RefreshCw className="size-4" />
+                              )}
                             </button>
                           )}
                         </div>
@@ -269,6 +330,47 @@ export function PatientManager() {
           patient={selectedPatientForHistory}
           onClose={() => setSelectedPatientForHistory(null)}
         />
+      )}
+
+      {isConfirmingAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-md rounded-2xl border shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-4 mb-6">
+              <div className={`p-3 rounded-full ${isConfirmingAction.is_active ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
+                {isConfirmingAction.is_active ? <UserX className="size-6" /> : <UserCheck className="size-6" />}
+              </div>
+              <h3 className="text-2xl font-bold tracking-tight">
+                {isConfirmingAction.is_active ? 'Inactivar' : 'Reactivar'} Paciente
+              </h3>
+            </div>
+            
+            <p className="text-muted-foreground mb-8 leading-relaxed">
+              {isConfirmingAction.is_active 
+                ? `¿Estás seguro de inactivar a ${isConfirmingAction.first_name} ${isConfirmingAction.last_name}? Sus récords históricos y facturas se preservarán para estadísticas, pero será ocultado del panel principal.`
+                : `¿Deseas reactivar a ${isConfirmingAction.first_name} ${isConfirmingAction.last_name} y devolverlo a la lista de pacientes activos?`}
+            </p>
+
+            <div className="flex flex-col sm:flex-row justify-end gap-3 font-medium">
+              <button
+                ref={cancelRef}
+                onClick={() => setIsConfirmingAction(null)}
+                className="order-2 sm:order-1 px-6 py-2.5 rounded-xl border bg-muted/50 hover:bg-muted transition-all cursor-pointer"
+              >
+                No, cancelar
+              </button>
+              <button
+                onClick={handleToggleActive}
+                className={`order-1 sm:order-2 px-6 py-2.5 rounded-xl text-white transition-all shadow-lg cursor-pointer ${
+                  isConfirmingAction.is_active 
+                    ? 'bg-destructive hover:bg-destructive/90 shadow-destructive/20' 
+                    : 'bg-primary hover:bg-primary/90 shadow-primary/20'
+                }`}
+              >
+                {isConfirmingAction.is_active ? 'Sí, inactivar' : 'Sí, reactivar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );
