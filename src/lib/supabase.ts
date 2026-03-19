@@ -8,56 +8,46 @@ const getSupabaseAnonKey = () => process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "p
 // navigator.locks causes "Lock broken by another request with the 'steal'
 // option" errors in React/Next.js environments. This mutex serializes
 // token refresh operations safely without the browser Locks API.
-const locks = new Map<string, Promise<any>>();
+// A simpler, more robust lock implementation for React/Supabase
+let activeLock: Promise<unknown> | null = null;
 
-async function inMemoryLock(
+async function inMemoryLock<R>(
   name: string,
   acquireTimeout: number,
-  fn: () => Promise<any>
-): Promise<any> {
-  // 1. Wait for any existing lock with this name to resolve
-  const existing = locks.get(name);
-  if (existing) {
+  fn: () => Promise<R>
+): Promise<R> {
+  // We only care about the single 'auth' lock usually
+  if (name !== "medapp-auth-token") return fn();
+
+  // If there's an active lock, wait for it with a timeout
+  if (activeLock) {
     try {
-      // Use a race to ensure we don't wait forever for the previous lock
       await Promise.race([
-        existing,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Timeout waiting for lock: ${name}`)), 10000)
-        ),
+        activeLock,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Lock acquisition timeout")), 20000))
       ]);
     } catch (err) {
-      console.warn(`AuthProvider: lock wait failed for "${name}":`, err instanceof Error ? err.message : err);
-      // We continue anyway – better to try and fail than to hang forever
+      console.warn("Auth lock wait discarded:", err);
     }
   }
 
-  // 2. Create our own lock promise
-  // IMPORTANT: Execute the function first, THEN set the lock to avoid early deletion
-  const executeWithTimeout = async () => {
+  // Define our task with an internal execution timeout
+  const task = async (): Promise<R> => {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error(`Auth operation timeout for ${name}`)), 30000)
+    );
     try {
-      return await Promise.race([
-        fn(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Execution timeout in lock: ${name}`)), 15000)
-        ),
-      ]);
-    } catch (err) {
-      throw err;
+      return await (Promise.race([fn(), timeoutPromise]) as Promise<R>);
+    } finally {
+      if (activeLock === currentLock) {
+        activeLock = null;
+      }
     }
   };
 
-  const lockPromise = executeWithTimeout();
-  locks.set(name, lockPromise);
-
-  try {
-    return await lockPromise;
-  } finally {
-    // Only delete if it's still our promise
-    if (locks.get(name) === lockPromise) {
-      locks.delete(name);
-    }
-  }
+  const currentLock = task();
+  activeLock = currentLock;
+  return currentLock;
 }
 
 export const supabase = createClient<Database>(getSupabaseUrl(), getSupabaseAnonKey(), {

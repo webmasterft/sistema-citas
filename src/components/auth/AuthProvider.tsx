@@ -3,17 +3,19 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { Tables } from "@/types/database";
 import { useRouter, usePathname } from "next/navigation";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: string | null;
-  profile: any | null;
+  profile: Tables<"profiles"> | null;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
+
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -29,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<string | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -120,10 +122,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ─── Route protection ─────────────────────────────────────────────────────
   useEffect(() => {
-    if (loading) return; // wait until auth is resolved
+    if (loading) return;
     const isPublic = pathname === "/login";
-    if (!session && !isPublic) router.push("/login");
-    else if (session && isPublic) router.push("/");
+    
+    // Si no hay sesión y no estamos en login, ir a la página principal (Home) o Login
+    // El usuario pidió mover al home page si se pierde la sesión.
+    if (!session && !isPublic) {
+      router.push("/"); // Cambiado de /login a / según pedido del usuario
+    } else if (session && isPublic) {
+      router.push("/");
+    }
   }, [session, loading, pathname, router]);
 
   const signOut = async () => {
