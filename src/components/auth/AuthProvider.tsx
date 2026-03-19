@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<string | null>(null);
   const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionAgeLoading, setSessionAgeLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   // Prevent double-initialization in React Strict Mode / double renders
@@ -106,8 +107,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 2. Listen for subsequent changes (sign-in, sign-out, token refresh)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!mounted) return;
+      
+      // If we just signed in, record the start time
+      if (event === "SIGNED_IN" && newSession) {
+        // Only set it if it doesn't exist yet to avoid resetting on token refresh
+        if (!localStorage.getItem("medapp-session-start")) {
+          localStorage.setItem("medapp-session-start", Date.now().toString());
+        }
+      } else if (event === "SIGNED_OUT") {
+        localStorage.removeItem("medapp-session-start");
+      }
+
       await applySession(newSession);
       setLoading(false);
       clearTimeout(failsafe);
@@ -120,19 +132,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []); // ← empty deps: run only on mount
 
+  // ─── Session Age Expiry logic (45 min) ───────────────────────────────────
+  useEffect(() => {
+    if (!session) {
+      setSessionAgeLoading(false);
+      return;
+    }
+
+    const MAX_AGE = 45 * 60 * 1000; // 45 minutes in ms
+    
+    const checkExpiry = () => {
+      const startTimeStr = localStorage.getItem("medapp-session-start");
+      if (!startTimeStr) {
+        // If no start time but has session, record it now as fallback
+        localStorage.setItem("medapp-session-start", Date.now().toString());
+        return;
+      }
+
+      const startTime = parseInt(startTimeStr, 10);
+      const age = Date.now() - startTime;
+
+      if (age > MAX_AGE) {
+        console.warn("Session expired (45 min limit reached). Logging out...");
+        signOut();
+      }
+    };
+
+    // Initial check
+    checkExpiry();
+    setSessionAgeLoading(false);
+
+    // Periodic check every minute
+    const interval = setInterval(checkExpiry, 60000);
+    return () => clearInterval(interval);
+  }, [session]);
+
   // ─── Route protection ─────────────────────────────────────────────────────
   useEffect(() => {
-    if (loading) return;
+    if (loading || sessionAgeLoading) return;
     const isPublic = pathname === "/login";
     
-    // Si no hay sesión y no estamos en login, ir a la página principal (Home) o Login
-    // El usuario pidió mover al home page si se pierde la sesión.
+    // Si no hay sesión y no estamos en login, ir a la página principal (Home)
     if (!session && !isPublic) {
-      router.push("/"); // Cambiado de /login a / según pedido del usuario
+      router.push("/"); 
     } else if (session && isPublic) {
       router.push("/");
     }
-  }, [session, loading, pathname, router]);
+  }, [session, loading, sessionAgeLoading, pathname, router]);
 
   const signOut = async () => {
     try {
