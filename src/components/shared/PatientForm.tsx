@@ -3,15 +3,17 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { X, Loader2 } from "lucide-react";
+import { Tables } from "@/types/database";
 import { translateError } from "@/lib/error-translator";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { validateEcuadorianCI, validateEcuadorianPhone, validateEmail } from "@/lib/validations";
 
 import { DatePicker } from "@/components/ui/DatePicker";
 
 interface PatientFormProps {
   onClose: () => void;
   onSuccess: () => void;
-  initialData?: any;
+  initialData?: Tables<"patients"> | null;
 }
 
 export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProps) {
@@ -54,9 +56,29 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
     const surgical_history = formData.get("surgical_history") as string;
     const medications = formData.get("medications") as string;
 
+    // --- Validations ---
+    if (id_number && !validateEcuadorianCI(id_number)) {
+      setError("La Cédula de Identidad no es válida.");
+      setLoading(false);
+      return;
+    }
+
+    if (email && !validateEmail(email)) {
+      setError("El correo electrónico no tiene un formato válido.");
+      setLoading(false);
+      return;
+    }
+
+    if (phone && !validateEcuadorianPhone(phone)) {
+      setError("El número de teléfono no es válido (ej: 0990000000 o 022000000).");
+      setLoading(false);
+      return;
+    }
+    // --- End Validations ---
+
     try {
       if (initialData?.id) {
-        const { error: submitError } = await Promise.race([
+        const { error: submitError } = (await Promise.race([
           supabase
             .from("patients")
             .update({
@@ -78,10 +100,10 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error("La operación tardó demasiado. Por favor reintente.")), 15000)
           ),
-        ]) as any;
+        ])) as { error: { message: string } | null };
         if (submitError) throw submitError;
       } else {
-        const { error: submitError } = await Promise.race([
+        const { error: submitError } = (await Promise.race([
           supabase.from("patients").insert([
             {
               first_name,
@@ -103,13 +125,13 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error("La operación tardó demasiado. Por favor reintente.")), 15000)
           ),
-        ]) as any;
+        ])) as { error: { message: string } | null };
         if (submitError) throw submitError;
       }
 
       onSuccess();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(translateError(err));
     } finally {
       setLoading(false);
@@ -142,7 +164,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                 id="first_name_1"
                 name="first_name_1"
                 required
-                defaultValue={initialData?.first_name?.split(" ")[0]}
+                defaultValue={initialData?.first_name?.split(" ")[0] || ""}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
                 placeholder="Ej: María"
               />
@@ -155,7 +177,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
               <input
                 id="first_name_2"
                 name="first_name_2"
-                defaultValue={initialData?.first_name?.split(" ").slice(1).join(" ")}
+                defaultValue={initialData?.first_name?.split(" ").slice(1).join(" ") || ""}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
                 placeholder="Ej: Eloísa"
               />
@@ -171,7 +193,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                 id="last_name_1"
                 name="last_name_1"
                 required
-                defaultValue={initialData?.last_name?.split(" ")[0]}
+                defaultValue={initialData?.last_name?.split(" ")[0] || ""}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
                 placeholder="Ej: Pérez"
               />
@@ -184,7 +206,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
               <input
                 id="last_name_2"
                 name="last_name_2"
-                defaultValue={initialData?.last_name?.split(" ").slice(1).join(" ")}
+                defaultValue={initialData?.last_name?.split(" ").slice(1).join(" ") || ""}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
                 placeholder="Ej: García"
               />
@@ -199,7 +221,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
               id="id_number"
               name="id_number"
               required
-              defaultValue={initialData?.id_number}
+              defaultValue={initialData?.id_number || ""}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring font-mono"
               placeholder="1720000000"
             />
@@ -242,7 +264,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
               id="phone"
               name="phone"
               type="tel"
-              defaultValue={initialData?.phone}
+              defaultValue={initialData?.phone || ""}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="099-000-0000"
             />
@@ -256,7 +278,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
               id="email"
               name="email"
               type="email"
-              defaultValue={initialData?.email}
+              defaultValue={initialData?.email || ""}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="correo@ejemplo.com"
             />
@@ -270,7 +292,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
               id="address"
               name="address"
               rows={2}
-              defaultValue={initialData?.address}
+              defaultValue={initialData?.address || ""}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring resize-none"
               placeholder="Calle principal, secundaria, nro de casa..."
             />
@@ -289,7 +311,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                 <textarea
                   id="physical_illnesses"
                   name="physical_illnesses"
-                  defaultValue={initialData?.physical_illnesses}
+                  defaultValue={initialData?.physical_illnesses || ""}
                   rows={2}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
                   placeholder="Ej: Hipertensión, Diabetes..."
@@ -305,7 +327,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                 <textarea
                   id="allergies"
                   name="allergies"
-                  defaultValue={initialData?.allergies}
+                  defaultValue={initialData?.allergies || ""}
                   rows={2}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
                   placeholder="Ej: Penicilina, Polen..."
@@ -321,7 +343,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                 <textarea
                   id="family_history"
                   name="family_history"
-                  defaultValue={initialData?.family_history}
+                  defaultValue={initialData?.family_history || ""}
                   rows={2}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
                   placeholder="Ej: Cáncer de colon (padre)..."
@@ -337,7 +359,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                 <textarea
                   id="surgical_history"
                   name="surgical_history"
-                  defaultValue={initialData?.surgical_history}
+                  defaultValue={initialData?.surgical_history || ""}
                   rows={2}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
                   placeholder="Ej: Apendicectomía (2015)..."
@@ -353,7 +375,7 @@ export function PatientForm({ onClose, onSuccess, initialData }: PatientFormProp
                 <textarea
                   id="medications"
                   name="medications"
-                  defaultValue={initialData?.medications}
+                  defaultValue={initialData?.medications || ""}
                   rows={2}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring transition-all"
                   placeholder="Ej: Losartán 50mg/día..."
